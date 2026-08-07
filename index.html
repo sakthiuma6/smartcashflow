@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartCashflow - Smart Sector Expense & Multi-Account Income Tracker</title>
+  <meta name="description" content="Track monthly and yearly income and expenses, view bank balance across multiple accounts, sector analytics, credit card bills, and multi-currency logging with local IndexedDB storage & primary MySQL Server backup.">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/logo.png?v=4">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Dependencies: Chart.js, Dexie.js, Lucide Icons, Google GSI -->
+  <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/styles.css?v=55">
+
+  <!-- Template-Exact User Login Layout Styles (Indigo Glassmorphic Theme) -->
+  <style>
+    .landing-page-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 160px);
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1rem;
+      box-sizing: border-box;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .landing-login-box {
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .landing-title {
+      font-size: 1.85rem;
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      color: #ffffff;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      text-align: center;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .landing-card {
+      width: 100%;
+      padding: 2.75rem 2.25rem;
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 12px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 25px rgba(99, 102, 241, 0.2);
+    }
+
+    .landing-input-group {
+      display: flex;
+      align-items: stretch;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin-bottom: 1.25rem;
+    }
+
+    .landing-input-icon {
+      width: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(30, 41, 59, 0.9);
+      color: #a5b4fc;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .landing-input-icon svg,
+    .landing-input-icon i {
+      width: 20px;
+      height: 20px;
+    }
+
+    .landing-input {
+      flex: 1;
+      padding: 0.95rem 1.1rem;
+      border: none;
+      background: transparent;
+      color: #f8fafc;
+      font-size: 0.98rem;
+      font-weight: 500;
+      outline: none;
+    }
+
+    .landing-input::placeholder {
+      color: #94a3b8;
+    }
+
+    .landing-options-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-top: 0.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .landing-remember-me {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+      color: #94a3b8;
+    }
+
+    .landing-remember-me input {
+      accent-color: #6366f1;
+      width: 16px;
+      height: 16px;
+    }
+
+    .landing-forgot-link {
+      color: #94a3b8;
+      text-decoration: none;
+      font-style: italic;
+      transition: color 0.2s;
+    }
+
+    .landing-forgot-link:hover {
+      color: #818cf8;
+    }
+
+    .landing-btn-primary {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      text-transform: uppercase;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+    }
+
+    .landing-btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+    }
+
+    .landing-btn-secondary {
+      width: 100%;
+      padding: 1rem;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #f1f5f9;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      margin-top: 1.25rem;
+      transition: all 0.2s ease-in-out;
+      text-transform: uppercase;
+    }
+
+    .landing-btn-secondary:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: #6366f1;
+      color: #ffffff;
+    }
+
+    .landing-btn-google {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #1f2937;
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.2s;
+    }
+
+    .landing-btn-google:hover {
+      background: #f1f5f9;
+    }
+  </style>
+</head>
+<body class="dark-theme">
+  <div class="app-container">
+    
+    <!-- Top Navigation Header -->
+    <header class="app-header glass-card">
+      <div class="brand">
+        <div class="brand-icon-custom" style="display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.1); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 12px; width: 44px; height: 44px; flex-shrink: 0; overflow: hidden; padding: 2px;">
+          <img src="assets/logo.png?v=4" alt="SmartCashflow Logo" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px;">
+        </div>
+        <div class="brand-text">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <h1 style="font-weight: 800; font-size: 1.35rem; letter-spacing: -0.4px; color: #ffffff; margin: 0;">Smart<span style="color: #6366f1;">Cashflow</span></h1>
+          </div>
+          <span class="badge badge-emerald">Multi-Account & Cashflow Analytics</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Admin User Switcher Filter (Visible for Admin user) -->
+        <div id="admin-user-selector-wrapper" style="display: none; align-items: center; gap: 0.4rem; background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.35); padding: 0.3rem 0.6rem; border-radius: 10px;">
+          <i data-lucide="crown" class="icon-sm text-amber" style="color:#f59e0b;"></i>
+          <label for="global-admin-user-filter" class="sr-only">Admin View User Filter</label>
+          <select id="global-admin-user-filter" class="select-input select-sm" style="color: #f59e0b; font-weight: 700; background: transparent; border: none;">
+            <option value="ALL">👑 Admin View: All Users' Data</option>
+            <!-- Dynamically populated with all registered users -->
+          </select>
+        </div>
+
+        <!-- User Session / Auth Header Profile Pill -->
+        <div id="user-header-container" style="display: flex; align-items: center; gap: 0.5rem;">
+          <button id="btn-open-auth-modal" class="btn btn-secondary text-indigo">
+            <i data-lucide="user"></i>
+            <span>Sign In / Register</span>
+          </button>
+        </div>
+
+        <!-- Monthly, Yearly, Specific Month & Custom Date Range Filter -->
+        <div class="timeframe-selector-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+          <i data-lucide="calendar" class="icon-sm text-emerald"></i>
+          <label for="global-timeframe" class="sr-only">Timeframe</label>
+          <select id="global-timeframe" class="select-input">
+            <option value="THIS_MONTH" selected>📅 This Month (Monthly)</option>
+            <option value="LAST_MONTH">📅 Last Month</option>
+            <option value="SPECIFIC_MONTH">📅 Specific Month...</option>
+            <option value="THIS_YEAR">📅 This Year (Yearly)</option>
+            <option value="CUSTOM_RANGE">📅 Custom Date Range...</option>
+            <option value="ALL">📅 All Time</option>
+          </select>
+
+          <!-- Specific Month Picker -->
+          <input type="month" id="filter-month-picker" class="input-text select-sm" style="display: none; width: 140px; padding: 0.4rem 0.6rem;">
+
+          <!-- Custom Date Range Pickers -->
+          <div id="custom-date-range-container" style="display: none; align-items: center; gap: 0.35rem;">
+            <input type="date" id="filter-start-date" class="input-text select-sm" style="width: 130px; padding: 0.4rem 0.6rem;">
+            <span class="text-muted" style="font-size: 0.8rem;">to</span>
+            <input type="date" id="filter-end-date" class="input-text select-sm" style="width: 130px; padding: 0.4rem 0.6rem;">
+          </div>
+        </div>
+
+        <!-- Account / Session Switcher -->
+        <div class="account-selector-wrapper">
+          <i data-lucide="building-2" class="icon-sm text-indigo"></i>
+          <label for="global-account-filter" class="sr-only">Account Session</label>
+          <select id="global-account-filter" class="select-input">
+            <option value="ALL">🏦 All Bank Accounts</option>
+            <!-- Dynamically populated -->
+          </select>
+          <button id="btn-edit-account" class="btn btn-ghost btn-sm" title="Edit Current Bank Account Details" style="display: none;">
+            <i data-lucide="edit-2"></i>
+          </button>
+          <button id="btn-add-account" class="btn btn-ghost btn-sm" title="Add New Bank Account Profile">
+            <i data-lucide="plus"></i>
+          </button>
+        </div>
+
+        <!-- Global Currency Selector -->
+        <div class="currency-selector-wrapper">
+          <i data-lucide="coins" class="icon-sm"></i>
+          <label for="global-currency" class="sr-only">Currency</label>
+          <select id="global-currency" class="select-input">
+            <option value="INR" selected>INR (₹)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD ($)</option>
+            <option value="AUD">AUD ($)</option>
+          </select>
+        </div>
+
+        <!-- Admin User Management CTA Button -->
+        <button id="btn-open-user-management" class="btn btn-secondary text-amber" title="Manage Registered Users & Roles" style="display: none;" onclick="window.openUserManagementModal && window.openUserManagementModal()">
+          <i data-lucide="users"></i>
+          <span>Manage Users</span>
+        </button>
+
+        <!-- Dashboard Layout Builder CTA -->
+        <button id="btn-open-dashboard-builder" class="btn btn-secondary text-indigo" title="Build & Customize Dashboard Widgets & Graphs">
+          <i data-lucide="layout"></i>
+          <span>Customize Layout</span>
+        </button>
+
+        <!-- Database Controls & MySQL Config Button -->
+        <div class="btn-group">
+          <button id="btn-open-mysql-config" class="btn btn-secondary text-emerald" title="Configure MySQL Host, Port, Username & Password">
+            <i data-lucide="settings"></i>
+            <span>SQL Config</span>
+          </button>
+          <button id="btn-export-db" class="btn btn-secondary" title="Export database to JSON/CSV">
+            <i data-lucide="upload"></i>
+            <span>Export</span>
+          </button>
+          <button id="btn-import-db" class="btn btn-secondary" title="Import backup JSON">
+            <i data-lucide="download"></i>
+            <span>Import</span>
+          </button>
+          <input type="file" id="import-file-input" accept=".json" style="display: none;">
+        </div>
+
+        <!-- Account Transfer CTA -->
+        <button id="btn-open-transfer-modal" class="btn btn-secondary text-indigo" title="Transfer funds between bank accounts">
+          <i data-lucide="arrow-left-right"></i>
+          <span>Transfer</span>
+        </button>
+
+        <!-- Add Transaction CTA -->
+        <button id="btn-open-modal" class="btn btn-primary btn-glow">
+          <i data-lucide="plus-circle"></i>
+          <span>Log Entry</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Template-Inspired User Login Landing View -->
+    <div id="landing-view" class="landing-page-container" style="display: none;">
+      <div class="landing-login-box">
+        <!-- Title -->
+        <h1 class="landing-title">USER LOGIN</h1>
+
+        <!-- Main Login Card Box -->
+        <div class="landing-card glass-card">
+          <form id="landing-form-login" autocomplete="off">
+            <div id="landing-auth-feedback" style="display: none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem;"></div>
+
+            <!-- Email ID / Username Input with Icon Prefix -->
+            <div class="landing-input-group mb-3">
+              <div class="landing-input-icon"><i data-lucide="user"></i></div>
+              <input type="text" id="landing-login-id" class="landing-input" placeholder="Email ID or Username" required autocomplete="off">
+            </div>
+
+            <!-- Password Input with Icon Prefix -->
+            <div class="landing-input-group mb-4">
+              <div class="landing-input-icon"><i data-lucide="lock"></i></div>
+              <input type="password" id="landing-login-pwd" class="landing-input" placeholder="Password" required autocomplete="new-password">
+            </div>
+
+            <!-- Options Row: Remember Me & Forgot Password -->
+            <div class="landing-options-row mb-4">
+              <label class="landing-remember-me">
+                <input type="checkbox" id="landing-remember" checked>
+                <span>Remember me</span>
+              </label>
+              <a href="#" id="link-forgot-password-landing" class="landing-forgot-link">Forgot Password?</a>
+            </div>
+
+            <!-- LOGIN CTA Button -->
+            <button type="submit" class="landing-btn-primary mb-3">
+              LOGIN
+            </button>
+
+            <!-- Google / Gmail OAuth Sign In -->
+            <div style="margin-top: 0.75rem; text-align: center;">
+              <button type="button" id="btn-landing-google" class="landing-btn-google">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                Sign in with Google / Gmail
+              </button>
+            </div>
+          </form>
+
+          <!-- Hidden LANDING SIGN UP FORM -->
+          <form id="landing-form-signup" style="display: none;" autocomplete="off">
+            <div class="landing-input-group mb-3">
+              <div class="landing-input-icon"><i data-lucide="user-check"></i></div>
+              <input type="text" id="landing-signup-name" class="landing-input" placeholder="Full Name" required>
+            </div>
+            <div class="landing-input-group mb-3">
+              <div class="landing-input-icon"><i data-lucide="user"></i></div>
+              <input type="text" id="landing-signup-user" class="landing-input" placeholder="Username" required>
+            </div>
+            <div class="landing-input-group mb-3">
+              <div class="landing-input-icon"><i data-lucide="mail"></i></div>
+              <input type="email" id="landing-signup-email" class="landing-input" placeholder="Email Address" required>
+            </div>
+            <div class="landing-input-group mb-4">
+              <div class="landing-input-icon"><i data-lucide="lock"></i></div>
+              <input type="password" id="landing-signup-pwd" class="landing-input" placeholder="Password" required minlength="6">
+            </div>
+            <button type="submit" class="landing-btn-primary mb-3">
+              CREATE ACCOUNT
+            </button>
+          </form>
+        </div>
+
+        <!-- REGISTER / SIGN IN Toggle Button Below Card -->
+        <button type="button" id="btn-landing-register-toggle" class="landing-btn-secondary mt-3">
+          REGISTER
+        </button>
+
+        <!-- Copyright Notice -->
+        <div style="margin-top: 2rem; font-size: 0.82rem; color: #94a3b8; text-align: center;">
+          © 2026 <strong>SmartCashflow Intelligence</strong>. All rights reserved.
+        </div>
+      </div>
+    </div>
+      </div>
+    </div>
+
+    <!-- Main Content Layout -->
+    <main class="main-content" id="main-dashboard-content">
+      
+      <!-- Top Overview KPI Cards -->
+      <section class="kpi-grid" id="kpi-section" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <!-- Net Bank Balance Card -->
+        <div class="kpi-card glass-card border-emerald" id="kpi-card-balance">
+          <div class="kpi-header">
+            <span class="kpi-title" id="kpi-title-account">Net Bank Balance</span>
+            <div class="kpi-icon icon-emerald"><i data-lucide="building-2"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-net-balance">$0.00</div>
+          <div class="kpi-subtext" id="kpi-balance-subtext">Opening Balance + Total Income - Total Expenses</div>
+        </div>
+
+        <!-- Total Income Card -->
+        <div class="kpi-card glass-card border-cyan" id="kpi-card-income">
+          <div class="kpi-header">
+            <span class="kpi-title" id="kpi-title-income">Monthly Income</span>
+            <div class="kpi-icon icon-cyan"><i data-lucide="arrow-down-left"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-total-income">$0.00</div>
+          <div class="kpi-subtext" id="kpi-income-subtext">0 income deposits logged</div>
+        </div>
+
+        <!-- Total Spent Card -->
+        <div class="kpi-card glass-card border-rose" id="kpi-card-spent">
+          <div class="kpi-header">
+            <span class="kpi-title" id="kpi-title-spent">Monthly Expenses</span>
+            <div class="kpi-icon icon-rose"><i data-lucide="arrow-up-right"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-total-spent">$0.00</div>
+          <div class="kpi-subtext" id="kpi-count-subtext">0 expense transactions</div>
+        </div>
+
+        <!-- Inter-Account Self-Transfers KPI Card -->
+        <div class="kpi-card glass-card border-indigo" id="kpi-card-transfers">
+          <div class="kpi-header">
+            <span class="kpi-title">Self-Transfers Volume</span>
+            <div class="kpi-icon icon-indigo"><i data-lucide="arrow-left-right"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-transfers-volume">$0.00</div>
+          <div class="kpi-subtext" id="kpi-transfers-subtext">0 inter-account transfers</div>
+        </div>
+
+        <!-- Investments Sector Card -->
+        <div class="kpi-card glass-card border-indigo" id="kpi-card-investments">
+          <div class="kpi-header">
+            <span class="kpi-title">Investments Sector</span>
+            <div class="kpi-icon icon-indigo"><i data-lucide="trending-up"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-investments">$0.00</div>
+          <div class="kpi-subtext" id="kpi-investments-share">0% of total wealth logged</div>
+        </div>
+
+        <!-- Top Sector Card -->
+        <div class="kpi-card glass-card border-amber" id="kpi-card-topsector">
+          <div class="kpi-header">
+            <span class="kpi-title">Top Expense Sector</span>
+            <div class="kpi-icon icon-amber"><i data-lucide="pie-chart"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-top-sector">None</div>
+          <div class="kpi-subtext" id="kpi-top-sector-amount">$0.00 spent</div>
+        </div>
+      </section>
+
+      <!-- Charts & Visual Analytics Section -->
+      <section class="analytics-grid" id="analytics-grid-section">
+        <!-- Sector Breakdown Chart -->
+        <div class="chart-card glass-card" id="card-graph-donut">
+          <div class="card-header">
+            <div>
+              <h2 id="title-graph-donut">Monthly Expense by Sector</h2>
+              <p class="text-muted">Percentage breakdown across spending sectors</p>
+            </div>
+            <div class="chart-legend-compact" id="sector-legend"></div>
+          </div>
+          <div class="chart-container donut-container">
+            <canvas id="chart-sector-donut"></canvas>
+          </div>
+        </div>
+
+        <!-- Sector Spend Bar Chart -->
+        <div class="chart-card glass-card" id="card-graph-bar">
+          <div class="card-header">
+            <div>
+              <h2 id="title-graph-bar">Sector Spend Comparison</h2>
+              <p class="text-muted">Total amount spent per sector</p>
+            </div>
+          </div>
+          <div class="chart-container bar-container">
+            <canvas id="chart-sector-bar"></canvas>
+          </div>
+        </div>
+
+        <!-- Payment Method Breakdown Chart (Buildable Option) -->
+        <div class="chart-card glass-card" id="card-graph-payment" style="display: none;">
+          <div class="card-header">
+            <div>
+              <h2>Payment Method Distribution</h2>
+              <p class="text-muted">Spend by Card, UPI, Transfer & Cash</p>
+            </div>
+          </div>
+          <div class="chart-container donut-container">
+            <canvas id="chart-payment-method"></canvas>
+          </div>
+        </div>
+
+        <!-- Account Balances Comparison Chart (Buildable Option) -->
+        <div class="chart-card glass-card" id="card-graph-accounts" style="display: none;">
+          <div class="card-header">
+            <div>
+              <h2>Bank Balances Comparison</h2>
+              <p class="text-muted">Net balance across active bank accounts</p>
+            </div>
+          </div>
+          <div class="chart-container bar-container">
+            <canvas id="chart-account-balances"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Special Sector Widgets: Credit Card Bills, Inter-Account Self-Transfers & Sector Budgets -->
+      <section class="special-widgets-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+        <!-- Inter-Account Self-Transfers Widget -->
+        <div class="widget-card glass-card" id="card-widget-transfers">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="arrow-left-right" class="text-indigo"></i>
+              <h2>Inter-Account Self-Transfers</h2>
+            </div>
+            <span class="badge badge-indigo" id="transfer-widget-count">0 Moves</span>
+          </div>
+          <div class="transfer-list" id="transfer-widget-list">
+            <div class="empty-state">No inter-account transfers logged yet.</div>
+          </div>
+        </div>
+
+        <!-- Credit Card Bills Panel -->
+        <div class="widget-card glass-card" id="card-widget-cc">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="credit-card" class="text-rose"></i>
+              <h2>Credit Card Bills & Subscriptions</h2>
+            </div>
+            <span class="badge badge-rose" id="cc-widget-count">0 Active</span>
+          </div>
+          <div class="cc-list" id="cc-widget-list">
+            <div class="empty-state">No credit card bills logged yet.</div>
+          </div>
+        </div>
+
+        <!-- Sector Budget Tracker -->
+        <div class="widget-card glass-card" id="card-widget-budgets">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="target" class="text-emerald"></i>
+              <h2>Sector Budget Limits</h2>
+            </div>
+            <button id="btn-edit-budgets" class="btn btn-ghost btn-sm">
+              <i data-lucide="settings"></i> Manage Budgets
+            </button>
+          </div>
+          <div class="budget-list" id="budget-widget-list">
+            <!-- Dynamically generated budget progress bars -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Expense & Income Register Data Table & Filters -->
+      <section class="table-section glass-card">
+        <div class="table-toolbar">
+          <div class="toolbar-title">
+            <h2>Financial Register</h2>
+            <span class="badge badge-slate" id="table-count-badge">0 items</span>
+            <button id="btn-reset-account-filter" class="btn btn-ghost btn-sm text-indigo" style="display: none;">
+              <i data-lucide="eye"></i> Show All Accounts
+            </button>
+          </div>
+
+          <div class="toolbar-controls">
+            <!-- Type Filter (All vs Expense vs Income) -->
+            <select id="table-type-filter" class="select-input">
+              <option value="ALL">All Entry Types</option>
+              <option value="Expense">Expenses Only 💸</option>
+              <option value="Income">Income Only 💰</option>
+            </select>
+
+            <!-- Search Input -->
+            <div class="search-box">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="table-search" placeholder="Search title, sector, note..." class="input-text">
+            </div>
+
+            <!-- Sector Filter dropdown -->
+            <select id="table-sector-filter" class="select-input">
+              <option value="ALL">All Sectors</option>
+              <optgroup label="Expense Sectors">
+                <option value="Shopping">Shopping 🛒</option>
+                <option value="Investments">Investments 📈</option>
+                <option value="Rent">Rent & Housing 🏠</option>
+                <option value="Credit Card Bills">Credit Card Bills 💳</option>
+                <option value="Utilities">Utilities & Bills ⚡</option>
+                <option value="Food & Dining">Food & Dining 🍔</option>
+                <option value="Travel">Travel & Transport ✈️</option>
+                <option value="Healthcare">Healthcare 🏥</option>
+                <option value="Entertainment">Entertainment 🎬</option>
+                <option value="Others">Others 📦</option>
+              </optgroup>
+              <optgroup label="Income Sectors">
+                <option value="Salary">Salary 💼</option>
+                <option value="Investment Returns">Investment Returns 📈</option>
+                <option value="Freelance & Side Hustle">Freelance & Side Hustle 💻</option>
+                <option value="Bonus & Grants">Bonus & Grants 🎁</option>
+                <option value="Refunds & Cashbacks">Refunds & Cashbacks 💸</option>
+                <option value="Other Income">Other Income 💵</option>
+              </optgroup>
+            </select>
+
+            <!-- Sort By -->
+            <select id="table-sort-by" class="select-input">
+              <option value="date-desc">Newest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="amount-desc">Amount: High to Low</option>
+              <option value="amount-asc">Amount: Low to High</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Sector Filter Chips -->
+        <div class="sector-chips" id="sector-chips-bar">
+          <!-- Dynamically generated sector tags -->
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-responsive">
+          <table class="expense-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Bank Account</th>
+                <th>Transaction & Sector</th>
+                <th>Type</th>
+                <th>Payment Method</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="expense-table-body">
+              <tr>
+                <td colspan="8" class="text-center py-4 text-muted">
+                  Loading financial records from database...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <!-- Footer Copyright Notice -->
+      <footer style="margin-top: 3.5rem; padding: 1.75rem 0 1rem 0; border-top: 1px solid rgba(255, 255, 255, 0.08); text-align: center; font-size: 0.85rem; color: #94a3b8;">
+        <p style="margin: 0;">© 2026 <strong>SmartCashflow Intelligence</strong>. All rights reserved.</p>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Modal: User Authentication (Login / Signup / Forgot Password / Google SSO) -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-card glass-card" style="max-width: 460px;">
+      <div class="modal-header">
+        <h2 id="auth-modal-title"><i data-lucide="shield-check" class="text-indigo"></i> Account Access</h2>
+        <button class="btn-close" id="btn-close-auth-modal"><i data-lucide="x"></i></button>
+      </div>
+
+      <!-- Auth Segmented Navigation Tabs -->
+      <div class="type-segmented-control mb-4">
+        <button type="button" class="segment-btn active" id="tab-auth-login">
+          <i data-lucide="log-in"></i> Sign In
+        </button>
+        <button type="button" class="segment-btn" id="tab-auth-signup">
+          <i data-lucide="user-plus"></i> Sign Up
+        </button>
+        <button type="button" class="segment-btn" id="tab-auth-reset">
+          <i data-lucide="key-round"></i> Reset
+        </button>
+      </div>
+
+      <div id="auth-feedback" style="display: none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem;"></div>
+
+      <!-- 1. SIGN IN FORM -->
+      <form id="form-auth-login" autocomplete="off">
+        <div class="form-group mb-3">
+          <label for="login-identifier">Username or Email *</label>
+          <input type="text" id="login-identifier" class="input-text" placeholder="e.g. admin or john@example.com" autocomplete="off" required>
+        </div>
+
+        <div class="form-group mb-3">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label for="login-password">Password *</label>
+            <a href="#" id="link-forgot-password" style="font-size: 0.8rem; color: var(--color-indigo); text-decoration: none;">Forgot password?</a>
+          </div>
+          <input type="password" id="login-password" class="input-text" placeholder="••••••••" autocomplete="new-password" required>
+        </div>
+
+        <!-- Google / Gmail OAuth Button -->
+        <div style="margin: 1.25rem 0 1rem 0; text-align: center;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+            <span class="text-muted" style="font-size: 0.78rem;">OR CONTINUE WITH</span>
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+          </div>
+          <button type="button" id="btn-google-login" class="btn btn-secondary" style="width: 100%; justify-content: center; gap: 0.6rem; padding: 0.7rem; background: #ffffff; color: #1f2937; font-weight: 600;">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            Sign in with Google / Gmail
+          </button>
+        </div>
+
+        <div class="modal-footer" style="padding-top: 0.5rem;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-auth-login">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-glow">Sign In</button>
+        </div>
+      </form>
+
+      <!-- 2. SIGN UP FORM -->
+      <form id="form-auth-signup" style="display: none;" autocomplete="off">
+        <div class="form-group mb-3">
+          <label for="signup-name">Full Name *</label>
+          <input type="text" id="signup-name" class="input-text" placeholder="e.g. John Doe" autocomplete="off" required>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="signup-username">Username *</label>
+          <input type="text" id="signup-username" class="input-text" placeholder="e.g. john_doe" autocomplete="off" required>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="signup-email">Email Address *</label>
+          <input type="email" id="signup-email" class="input-text" placeholder="e.g. john@example.com" autocomplete="off" required>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="signup-password">Password *</label>
+          <input type="password" id="signup-password" class="input-text" placeholder="••••••••" autocomplete="new-password" required minlength="6">
+          <span class="text-muted" style="font-size: 0.75rem;">Encrypted with PBKDF2-HMAC-SHA256 salted hashing.</span>
+        </div>
+
+        <div class="modal-footer" style="padding-top: 0.5rem;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-auth-signup">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-glow">Create Account</button>
+        </div>
+      </form>
+
+      <!-- 3. RESET PASSWORD FORM -->
+      <form id="form-auth-reset" style="display: none;" autocomplete="off">
+        <!-- Step 1: Enter Email -->
+        <div id="reset-step-1">
+          <div class="form-group mb-3">
+            <label for="reset-email">Your Account Email *</label>
+            <input type="email" id="reset-email" class="input-text" placeholder="e.g. john@example.com" required>
+          </div>
+          <div class="modal-footer" style="padding-top: 0.5rem;">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-auth-reset">Cancel</button>
+            <button type="button" id="btn-send-reset-code" class="btn btn-primary btn-glow">Send Reset Verification Code</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Verification Code & New Password -->
+        <div id="reset-step-2" style="display: none;">
+          <div class="form-group mb-3">
+            <label for="reset-code">6-Digit Verification Code *</label>
+            <input type="text" id="reset-code" class="input-text" placeholder="e.g. 123456" required>
+          </div>
+          <div class="form-group mb-3">
+            <label for="reset-new-password">New Password *</label>
+            <input type="password" id="reset-new-password" class="input-text" placeholder="••••••••" required minlength="6">
+          </div>
+          <div class="modal-footer" style="padding-top: 0.5rem;">
+            <button type="button" class="btn btn-secondary" id="btn-back-reset-step1">Back</button>
+            <button type="submit" class="btn btn-primary btn-glow">Confirm & Update Password</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Configure MySQL Connection Details -->
+  <div class="modal-overlay" id="mysql-config-modal">
+    <div class="modal-card glass-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2><i data-lucide="database" class="text-emerald"></i> Configure MySQL Server Connection</h2>
+        <button class="btn-close" id="btn-close-mysql-config"><i data-lucide="x"></i></button>
+      </div>
+      
+      <form id="mysql-config-form">
+        <div id="mysql-config-feedback" style="display: none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem;"></div>
+
+        <div class="form-grid">
+          <!-- Host Address -->
+          <div class="form-group col-span-2">
+            <label for="cfg-sql-host">MySQL Server Host Address *</label>
+            <input type="text" id="cfg-sql-host" class="input-text" placeholder="e.g. 127.0.0.1 or mysql.yourdomain.com" required value="127.0.0.1">
+          </div>
+
+          <!-- Port -->
+          <div class="form-group">
+            <label for="cfg-sql-port">MySQL Port *</label>
+            <input type="number" id="cfg-sql-port" class="input-text" placeholder="3306" required value="3306">
+          </div>
+
+          <!-- Database Name -->
+          <div class="form-group">
+            <label for="cfg-sql-dbname">Database Name *</label>
+            <input type="text" id="cfg-sql-dbname" class="input-text" placeholder="smartcashflow_db" required value="smartcashflow_db">
+          </div>
+
+          <!-- Username -->
+          <div class="form-group">
+            <label for="cfg-sql-user">MySQL Username *</label>
+            <input type="text" id="cfg-sql-user" class="input-text" placeholder="root" required value="root">
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label for="cfg-sql-pass">MySQL Password</label>
+            <input type="password" id="cfg-sql-pass" class="input-text" placeholder="Enter password (if any)">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn btn-secondary text-rose" id="btn-clear-db" title="Clear all records from database" style="display: none;">
+            <i data-lucide="trash-2"></i> Reset DB
+          </button>
+          <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-mysql-config">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-glow" id="btn-save-mysql-config">Test & Save Connection</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Build & Customize Dashboard Layout -->
+  <div class="modal-overlay" id="dashboard-builder-modal">
+    <div class="modal-card glass-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <h2><i data-lucide="layout" class="text-indigo"></i> Customize Dashboard Layout</h2>
+        <button class="btn-close" id="btn-close-dashboard-builder"><i data-lucide="x"></i></button>
+      </div>
+      
+      <div class="builder-options-container">
+        <h3 class="mb-2" style="font-size: 0.95rem; color: var(--text-main);">📈 Select Analytics Graphs to Display:</h3>
+        <div class="builder-checkbox-grid mb-4" style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <label class="checkbox-label"><input type="checkbox" id="chk-graph-donut" checked> Expense by Sector (Donut Chart)</label>
+          <label class="checkbox-label"><input type="checkbox" id="chk-graph-bar" checked> Sector Spend Comparison (Bar Chart)</label>
+          <label class="checkbox-label"><input type="checkbox" id="chk-graph-payment"> Payment Method Distribution (Pie Chart)</label>
+          <label class="checkbox-label"><input type="checkbox" id="chk-graph-accounts"> Bank Balances Comparison (Bar Chart)</label>
+        </div>
+
+        <h3 class="mb-2" style="font-size: 0.95rem; color: var(--text-main);">📊 Select Top KPI Metric Cards:</h3>
+        <div class="builder-checkbox-grid mb-4" style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <label class="checkbox-label"><input type="checkbox" id="chk-kpi-transfers" checked> Self-Transfers Volume Card</label>
+          <label class="checkbox-label"><input type="checkbox" id="chk-kpi-investments" checked> Investments Sector Card</label>
+          <label class="checkbox-label"><input type="checkbox" id="chk-kpi-topsector" checked> Top Expense Sector Card</label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-dashboard-builder">Cancel</button>
+        <button type="button" class="btn btn-primary btn-glow" id="btn-save-dashboard-builder">Save Dashboard Layout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Transaction (Expense or Income) -->
+  <div class="modal-overlay" id="expense-modal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2 id="modal-title">Log Financial Entry</h2>
+        <button class="btn-close" id="btn-close-modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="expense-form">
+        <input type="hidden" id="form-id">
+        
+        <!-- Transaction Type Switcher Segment -->
+        <div class="type-segmented-control mb-4">
+          <button type="button" class="segment-btn active" id="btn-type-expense" data-type="Expense">
+            <i data-lucide="arrow-up-right"></i> Expense
+          </button>
+          <button type="button" class="segment-btn" id="btn-type-income" data-type="Income">
+            <i data-lucide="arrow-down-left"></i> Income / Deposit
+          </button>
+        </div>
+        <input type="hidden" id="form-type" value="Expense">
+
+        <div class="form-grid">
+          <!-- Bank Account Selector -->
+          <div class="form-group col-span-2">
+            <label for="form-account">Bank Account / Session *</label>
+            <select id="form-account" class="select-input" required>
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <!-- Title -->
+          <div class="form-group col-span-2">
+            <label for="form-title">Entry Title / Description *</label>
+            <input type="text" id="form-title" class="input-text" placeholder="e.g. Monthly Salary, Amazon Shopping, SIP Investment" required>
+          </div>
+
+          <!-- Amount -->
+          <div class="form-group">
+            <label for="form-amount">Amount *</label>
+            <div class="input-with-prefix">
+              <span class="input-prefix" id="form-currency-prefix">$</span>
+              <input type="number" step="0.01" min="0.01" id="form-amount" class="input-text" placeholder="0.00" required>
+            </div>
+          </div>
+
+          <!-- Currency selection for this item -->
+          <div class="form-group">
+            <label for="form-currency">Original Currency</label>
+            <select id="form-currency" class="select-input">
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="INR">INR (₹)</option>
+              <option value="JPY">JPY (¥)</option>
+              <option value="CAD">CAD ($)</option>
+              <option value="AUD">AUD ($)</option>
+            </select>
+          </div>
+
+          <!-- Sector / Category (Populated dynamically) -->
+          <div class="form-group">
+            <label for="form-sector" id="label-form-sector">Sector / Category *</label>
+            <select id="form-sector" class="select-input" required>
+              <!-- Dynamically populated based on Expense or Income selection -->
+            </select>
+          </div>
+
+          <!-- Payment Method / Destination -->
+          <div class="form-group">
+            <label for="form-payment">Payment Method / Account</label>
+            <select id="form-payment" class="select-input">
+              <option value="Bank Transfer">Bank Transfer 🏦</option>
+              <option value="Credit Card">Credit Card 💳</option>
+              <option value="Debit Card">Debit Card 💳</option>
+              <option value="UPI">UPI / Digital Wallet 📱</option>
+              <option value="Cash">Cash 💵</option>
+            </select>
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label for="form-date">Transaction Date *</label>
+            <input type="date" id="form-date" class="input-text" required>
+          </div>
+
+          <!-- Recurring & Status -->
+          <div class="form-group">
+            <label for="form-recurring">Type / Recurring</label>
+            <select id="form-recurring" class="select-input">
+              <option value="One-time">One-time Entry</option>
+              <option value="Monthly">Monthly Recurring</option>
+              <option value="Yearly">Yearly Recurring</option>
+            </select>
+          </div>
+
+          <!-- Status (Paid/Deposited vs Pending) -->
+          <div class="form-group">
+            <label for="form-status">Status</label>
+            <select id="form-status" class="select-input">
+              <option value="Completed">Completed / Deposited</option>
+              <option value="Pending">Pending / Expected</option>
+            </select>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group col-span-2">
+            <label for="form-notes">Notes / Tags</label>
+            <input type="text" id="form-notes" class="input-text" placeholder="e.g. #payroll #bonus #statement-july">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-glow" id="btn-submit-form">Save Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Inter-Account Funds Transfer -->
+  <div class="modal-overlay" id="transfer-modal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2><i data-lucide="arrow-left-right" class="text-indigo"></i> Transfer Funds Between Accounts</h2>
+        <button class="btn-close" id="btn-close-transfer-modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="transfer-form">
+        <div class="form-grid">
+          <!-- From Account -->
+          <div class="form-group">
+            <label for="transfer-from-account">From Account (Source) *</label>
+            <select id="transfer-from-account" class="select-input" required>
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <!-- To Account -->
+          <div class="form-group">
+            <label for="transfer-to-account">To Account (Destination) *</label>
+            <select id="transfer-to-account" class="select-input" required>
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <!-- Amount -->
+          <div class="form-group">
+            <label for="transfer-amount">Transfer Amount *</label>
+            <div class="input-with-prefix">
+              <span class="input-prefix" id="transfer-currency-prefix">$</span>
+              <input type="number" step="0.01" min="0.01" id="transfer-amount" class="input-text" placeholder="0.00" required>
+            </div>
+          </div>
+
+          <!-- Currency -->
+          <div class="form-group">
+            <label for="transfer-currency">Currency</label>
+            <select id="transfer-currency" class="select-input">
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="INR">INR (₹)</option>
+              <option value="JPY">JPY (¥)</option>
+              <option value="CAD">CAD ($)</option>
+              <option value="AUD">AUD ($)</option>
+            </select>
+          </div>
+
+          <!-- Transfer Date -->
+          <div class="form-group col-span-2">
+            <label for="transfer-date">Transfer Date *</label>
+            <input type="date" id="transfer-date" class="input-text" required>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group col-span-2">
+            <label for="transfer-notes">Transfer Notes / Reason</label>
+            <input type="text" id="transfer-notes" class="input-text" placeholder="e.g. Monthly savings contribution, emergency fund deposit">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-transfer-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-glow" id="btn-submit-transfer">Confirm & Execute Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Export Data Options -->
+  <div class="modal-overlay" id="export-modal">
+    <div class="modal-card glass-card" style="max-width: 460px;">
+      <div class="modal-header">
+        <h2><i data-lucide="upload" class="text-indigo"></i> Export Database Backup</h2>
+        <button class="btn-close" id="btn-close-export-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+        Choose your preferred backup export format:
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+        <!-- Clean JSON Backup CTA -->
+        <button id="btn-export-json-action" class="btn btn-primary btn-glow" style="justify-content: center; padding: 0.85rem;">
+          <i data-lucide="file-json"></i> <span>Download Full JSON Backup</span>
+        </button>
+        <button id="btn-export-csv-action" class="btn btn-secondary" style="justify-content: center; padding: 0.85rem; background: var(--bg-card-hover);">
+          <i data-lucide="file-spreadsheet"></i> <span>Download CSV Spreadsheet</span>
+        </button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-export-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Bank Account Profile -->
+  <div class="modal-overlay" id="account-modal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2 id="acc-modal-title">Bank Account Profile</h2>
+        <button class="btn-close" id="btn-close-account-modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="account-form">
+        <input type="hidden" id="acc-id-hidden">
+
+        <div class="form-grid">
+          <div class="form-group col-span-2">
+            <label for="acc-name">Account Name *</label>
+            <input type="text" id="acc-name" class="input-text" placeholder="e.g. HDFC Salary Account, Chase Freedom, Business LLC" required>
+          </div>
+
+          <div class="form-group">
+            <label for="acc-bank">Bank Name / Institution *</label>
+            <input type="text" id="acc-bank" class="input-text" placeholder="e.g. HDFC Bank, Chase, Wells Fargo, Cash" required>
+          </div>
+
+          <div class="form-group">
+            <label for="acc-type">Account Type *</label>
+            <select id="acc-type" class="select-input">
+              <option value="Checking">Checking Account 🏦</option>
+              <option value="Savings">Savings Account 💰</option>
+              <option value="Business">Business Account 💼</option>
+              <option value="Credit Card">Credit Card Account 💳</option>
+              <option value="Cash">Cash Wallet 💵</option>
+            </select>
+          </div>
+
+          <!-- Account Currency Dropdown -->
+          <div class="form-group">
+            <label for="acc-currency">Account Currency *</label>
+            <select id="acc-currency" class="select-input">
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="INR">INR (₹)</option>
+              <option value="JPY">JPY (¥)</option>
+              <option value="CAD">CAD ($)</option>
+              <option value="AUD">AUD ($)</option>
+            </select>
+          </div>
+
+          <!-- Opening / Rollover Balance Field -->
+          <div class="form-group col-span-2">
+            <label for="acc-initial-balance">Opening / Rollover Balance (from last month)</label>
+            <div class="input-with-prefix">
+              <span class="input-prefix" id="acc-currency-prefix">$</span>
+              <input type="number" step="0.01" id="acc-initial-balance" class="input-text" placeholder="0.00" value="0.00">
+            </div>
+            <span class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+              Included in Net Bank Balance surplus in its native account currency.
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn btn-secondary text-rose" id="btn-delete-account" style="display: none;">
+            <i data-lucide="trash-2"></i> Delete Account
+          </button>
+          <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-account-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-glow" id="btn-submit-acc">Save Account Profile</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Reset DB Confirmation -->
+  <div class="modal-overlay" id="confirm-reset-modal">
+    <div class="modal-card glass-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h2 class="text-rose" style="display:flex;align-items:center;gap:0.5rem;"><i data-lucide="alert-triangle"></i> Reset Database?</h2>
+        <button class="btn-close" id="btn-close-reset-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+        Are you sure you want to delete <strong>ALL logged income, expenses & bank accounts</strong> from your database? This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-reset-modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-reset-db" style="background: linear-gradient(135deg, var(--color-rose), #e11d48);">
+          <i data-lucide="trash-2"></i> Yes, Reset Database
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Budget Configuration -->
+  <div class="modal-overlay" id="budget-modal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2>Sector Budget Limits</h2>
+        <button class="btn-close" id="btn-close-budget-modal"><i data-lucide="x"></i></button>
+      </div>
+      <div class="budget-form-container">
+        <p class="text-muted mb-4">Set monthly expense budget thresholds for each sector to receive visual warnings.</p>
+        <div id="budget-inputs-list" class="budget-inputs-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-save-budgets">Save Budgets</button>
+      </div>
+  <!-- Modal: Admin User Management Screen -->
+  <div class="modal-overlay" id="user-management-modal">
+    <div class="modal-card glass-card" style="max-width: 920px; width: 95%;">
+      <div class="modal-header">
+        <h2><i data-lucide="users" style="color: #f59e0b;"></i> Registered Users Directory & Access Management</h2>
+        <button class="btn-close" id="btn-close-user-management-modal"><i data-lucide="x"></i></button>
+      </div>
+      
+      <div style="padding: 1rem 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+          <span class="text-muted" style="font-size: 0.9rem;">Overview of all user accounts registered in MySQL database</span>
+          <button id="btn-admin-add-user" class="btn btn-primary btn-sm btn-glow">
+            <i data-lucide="user-plus"></i> Register New User
+          </button>
+        </div>
+
+        <div id="user-management-feedback" style="display: none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem;"></div>
+
+        <!-- Users Directory Table -->
+        <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+          <table class="expense-table">
+            <thead>
+              <tr>
+                <th>User Profile</th>
+                <th>Email Address</th>
+                <th>Role</th>
+                <th>Linked Records</th>
+                <th>Auth Provider</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="user-management-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-user-management-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Scripts with Cache Buster v55 -->
+  <script src="js/currency.js?v=55"></script>
+  <script src="js/db.js?v=55"></script>
+  <script src="js/sync.js?v=55"></script>
+  <script src="js/charts.js?v=55"></script>
+  <script src="js/auth.js?v=55"></script>
+  <script src="js/app.js?v=55"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="smartCashflowGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d2ff" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="smartCashflowGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#00b4d8" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Intertwined Arrow S Path 1 -->
+  <path d="M 45,150 
+           C 45,120 70,105 100,105 
+           L 125,105 
+           C 150,105 165,85 165,60 
+           L 165,40" 
+        stroke="url(#smartCashflowGrad)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Arrow Head Top Right -->
+  <path d="M 140,55 L 165,30 L 190,55" 
+        stroke="url(#smartCashflowGrad)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Intertwined Arrow S Path 2 -->
+  <path d="M 155,50 
+           C 155,80 130,95 100,95 
+           L 75,95 
+           C 50,95 35,115 35,140 
+           L 35,160" 
+        stroke="url(#smartCashflowGrad2)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Arrow Head Bottom Left -->
+  <path d="M 60,145 L 35,170 L 10,145" 
+        stroke="url(#smartCashflowGrad2)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
