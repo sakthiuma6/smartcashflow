@@ -8,7 +8,7 @@ let paymentChartInstance = null;
 let accountChartInstance = null;
 
 /**
- * Initializes or updates the Sector Donut Chart
+ * Initializes or updates the Sector Donut Chart with Interactive Click Prompt
  */
 function updateSectorDonutChart(sectorTotals) {
   const canvas = document.getElementById('chart-sector-donut');
@@ -38,13 +38,25 @@ function updateSectorDonutChart(sectorTotals) {
         backgroundColor: chartColors,
         borderWidth: 2,
         borderColor: '#0b0f17',
-        hoverOffset: 6
+        hoverOffset: 8
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '72%',
+      cutout: '70%',
+      onHover: (event, chartElement) => {
+        event.native.target.style.cursor = chartElement.length && hasData ? 'pointer' : 'default';
+      },
+      onClick: (event, elements, chart) => {
+        if (elements && elements.length > 0 && hasData) {
+          const idx = elements[0].index;
+          const sector = chart.data.labels[idx];
+          if (sector && sector !== 'No Data Logged' && window.showChartDrilldownPrompt) {
+            window.showChartDrilldownPrompt('sector', sector);
+          }
+        }
+      },
       plugins: {
         legend: {
           display: true,
@@ -72,7 +84,7 @@ function updateSectorDonutChart(sectorTotals) {
               const formatted = window.CurrencyModule.formatCurrency(val);
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
               const pct = ((val / total) * 100).toFixed(1);
-              return ` ${context.label}: ${formatted} (${pct}%)`;
+              return ` ${context.label}: ${formatted} (${pct}%) • Click to view`;
             }
           }
         }
@@ -82,7 +94,7 @@ function updateSectorDonutChart(sectorTotals) {
 }
 
 /**
- * Initializes or updates the Sector Spend Bar Chart
+ * Initializes or updates the Sector Spend Bar Chart with Interactive Click Prompt
  */
 function updateSectorBarChart(sectorTotals) {
   const canvas = document.getElementById('chart-sector-bar');
@@ -114,6 +126,18 @@ function updateSectorBarChart(sectorTotals) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      onHover: (event, chartElement) => {
+        event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
+      },
+      onClick: (event, elements, chart) => {
+        if (elements && elements.length > 0) {
+          const idx = elements[0].index;
+          const sector = chart.data.labels[idx];
+          if (sector && window.showChartDrilldownPrompt) {
+            window.showChartDrilldownPrompt('sector', sector);
+          }
+        }
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -125,7 +149,7 @@ function updateSectorBarChart(sectorTotals) {
           padding: 12,
           callbacks: {
             label: function(context) {
-              return ` Amount: ${window.CurrencyModule.formatCurrency(context.raw)}`;
+              return ` Amount: ${window.CurrencyModule.formatCurrency(context.raw)} • Click to view`;
             }
           }
         }
@@ -151,7 +175,7 @@ function updateSectorBarChart(sectorTotals) {
 }
 
 /**
- * Initializes or updates Payment Method Breakdown Donut Chart
+ * Initializes or updates Payment Method Breakdown Donut Chart with Interactive Click Prompt
  */
 function updatePaymentMethodChart(expenses, globalCurrency) {
   const canvas = document.getElementById('chart-payment-method');
@@ -166,8 +190,9 @@ function updatePaymentMethodChart(expenses, globalCurrency) {
     }
   });
 
-  const labels = Object.keys(map).length > 0 ? Object.keys(map) : ['No Data'];
-  const data = Object.values(map).length > 0 ? Object.values(map) : [1];
+  const hasData = Object.keys(map).length > 0;
+  const labels = hasData ? Object.keys(map) : ['No Data'];
+  const data = hasData ? Object.values(map) : [1];
   const colors = ['#6366f1', '#10b981', '#f59e0b', '#06b6d4', '#ec4899', '#a855f7'];
 
   if (paymentChartInstance) paymentChartInstance.destroy();
@@ -181,21 +206,42 @@ function updatePaymentMethodChart(expenses, globalCurrency) {
         data: data,
         backgroundColor: colors,
         borderWidth: 2,
-        borderColor: '#0b0f17'
+        borderColor: '#0b0f17',
+        hoverOffset: 8
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      onHover: (event, chartElement) => {
+        event.native.target.style.cursor = chartElement.length && hasData ? 'pointer' : 'default';
+      },
+      onClick: (event, elements, chart) => {
+        if (elements && elements.length > 0 && hasData) {
+          const idx = elements[0].index;
+          const pm = chart.data.labels[idx];
+          if (pm && pm !== 'No Data' && window.showChartDrilldownPrompt) {
+            window.showChartDrilldownPrompt('paymentMethod', pm);
+          }
+        }
+      },
       plugins: {
-        legend: { display: true, position: 'right', labels: { color: '#94a3b8' } }
+        legend: { display: true, position: 'right', labels: { color: '#94a3b8' } },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              if (!hasData) return ' No data';
+              return ` ${context.label}: ${window.CurrencyModule.formatCurrency(context.raw)} • Click to view`;
+            }
+          }
+        }
       }
     }
   });
 }
 
 /**
- * Initializes or updates Account Balances Comparison Chart
+ * Initializes or updates Account Balances Comparison Chart with Interactive Click Prompt
  */
 function updateAccountBalanceChart(accounts, expenses, globalCurrency) {
   const canvas = document.getElementById('chart-account-balances');
@@ -234,7 +280,28 @@ function updateAccountBalanceChart(accounts, expenses, globalCurrency) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      onHover: (event, chartElement) => {
+        event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
+      },
+      onClick: (event, elements, chart) => {
+        if (elements && elements.length > 0) {
+          const idx = elements[0].index;
+          const accName = chart.data.labels[idx];
+          if (accName && window.showChartDrilldownPrompt) {
+            window.showChartDrilldownPrompt('account', accName);
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return ` Balance: ${window.CurrencyModule.formatCurrency(context.raw)} • Click to view`;
+            }
+          }
+        }
+      },
       scales: {
         x: { ticks: { color: '#94a3b8' } },
         y: { ticks: { color: '#94a3b8' } }

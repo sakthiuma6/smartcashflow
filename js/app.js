@@ -2023,6 +2023,31 @@ function initEventListeners() {
       renderApp();
     });
   }
+
+  // Chart Drill-Down Modal Close & Clear Filter Event Listeners
+  const btnCloseDrilldown = document.getElementById('btn-close-drilldown-modal');
+  if (btnCloseDrilldown) btnCloseDrilldown.addEventListener('click', closeDrilldownModal);
+  const btnCancelDrilldown = document.getElementById('btn-cancel-drilldown-modal');
+  if (btnCancelDrilldown) btnCancelDrilldown.addEventListener('click', closeDrilldownModal);
+
+  const btnClearChartFilter = document.getElementById('btn-clear-chart-filter');
+  if (btnClearChartFilter) {
+    btnClearChartFilter.addEventListener('click', () => {
+      activeSectorFilter = 'ALL';
+      activeAccountFilter = 'ALL';
+      searchTerm = '';
+      const secSelect = document.getElementById('table-sector-filter');
+      if (secSelect) secSelect.value = 'ALL';
+      const accSelect = document.getElementById('global-account-filter');
+      if (accSelect) accSelect.value = 'ALL';
+      const searchInp = document.getElementById('table-search');
+      if (searchInp) searchInp.value = '';
+      const tableBanner = document.getElementById('table-drilldown-prompt-banner');
+      if (tableBanner) tableBanner.style.display = 'none';
+      currentTablePage = 1;
+      renderApp();
+    });
+  }
 }
 
 /**
@@ -2422,6 +2447,165 @@ function closeBudgetModal() {
   const el = document.getElementById('budget-modal');
   if (el) el.classList.remove('active');
 }
+
+/**
+ * Interactive Graph Drill-Down Prompt Modal & Same-Page Highlighting
+ */
+function showChartDrilldownPrompt(filterType, filterValue) {
+  const modal = document.getElementById('chart-drilldown-modal');
+  const tbody = document.getElementById('drilldown-table-body');
+  if (!modal || !tbody) return;
+
+  const globalCurrency = window.CurrencyModule.getActiveCurrency();
+  const accMap = {};
+  currentAccounts.forEach(a => { accMap[a.id] = a.name; });
+
+  let matchedExpenses = [];
+  let displayTitle = filterValue;
+  let typeSubtitle = 'Transactions Breakdown';
+
+  if (filterType === 'sector') {
+    displayTitle = `${filterValue} Sector`;
+    typeSubtitle = `All transactions categorized under ${filterValue}`;
+    matchedExpenses = currentExpenses.filter(e => e.sector === filterValue);
+  } else if (filterType === 'paymentMethod') {
+    displayTitle = `${filterValue} Method`;
+    typeSubtitle = `Transactions paid via ${filterValue}`;
+    matchedExpenses = currentExpenses.filter(e => (e.paymentMethod || 'Bank Transfer') === filterValue);
+  } else if (filterType === 'account') {
+    displayTitle = `${filterValue} Account`;
+    typeSubtitle = `All activity logged for ${filterValue}`;
+    const selectedAcc = currentAccounts.find(a => a.name === filterValue);
+    const targetId = selectedAcc ? selectedAcc.id : filterValue;
+    matchedExpenses = currentExpenses.filter(e => (e.accountId || 'acc_primary') === targetId);
+  }
+
+  // Calculate total volume
+  let totalVolume = 0;
+  matchedExpenses.forEach(e => {
+    const amt = window.CurrencyModule.convertCurrency(e.amount, e.currency || 'USD', globalCurrency);
+    if ((e.type || 'Expense') === 'Income') totalVolume += amt;
+    else totalVolume += amt;
+  });
+
+  const formattedTotal = window.CurrencyModule.formatCurrency(totalVolume, globalCurrency);
+
+  // Update Modal Header & Summary Strip
+  const elTitle = document.getElementById('drilldown-modal-title');
+  const elSub = document.getElementById('drilldown-modal-subtitle');
+  const elItemName = document.getElementById('drilldown-item-name');
+  const elCount = document.getElementById('drilldown-count');
+  const elTotalAmt = document.getElementById('drilldown-total-amount');
+
+  if (elTitle) elTitle.textContent = `📊 ${displayTitle} Breakdown`;
+  if (elSub) elSub.textContent = typeSubtitle;
+  if (elItemName) elItemName.textContent = displayTitle;
+  if (elCount) elCount.textContent = `${matchedExpenses.length} record${matchedExpenses.length === 1 ? '' : 's'}`;
+  if (elTotalAmt) elTotalAmt.textContent = formattedTotal;
+
+  // Render Drilldown Table rows
+  if (matchedExpenses.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center py-4 text-muted">
+          No individual transaction records found for <strong>${escapeHTML(filterValue)}</strong> in active records.
+        </td>
+      </tr>
+    `;
+  } else {
+    tbody.innerHTML = matchedExpenses.map(item => {
+      const isIncome = (item.type || 'Expense') === 'Income';
+      const accountName = accMap[item.accountId] || 'Primary Account';
+      const convertedAmt = window.CurrencyModule.convertCurrency(item.amount, item.currency || 'USD', globalCurrency);
+      const formattedAmt = (isIncome ? '+ ' : '- ') + window.CurrencyModule.formatCurrency(convertedAmt, globalCurrency);
+
+      return `
+        <tr>
+          <td class="text-muted" style="white-space: nowrap; font-size: 0.82rem;">${item.date}</td>
+          <td><span class="badge badge-indigo" style="font-size: 0.72rem;">💳 ${escapeHTML(accountName)}</span></td>
+          <td>
+            <div style="font-weight: 600; font-size: 0.85rem;">${escapeHTML(item.title)}</div>
+            ${item.notes ? `<div class="text-muted" style="font-size: 0.72rem;">${escapeHTML(item.notes)}</div>` : ''}
+          </td>
+          <td><span class="badge badge-slate" style="font-size: 0.72rem;">${item.sector}</span></td>
+          <td>
+            <span class="badge ${isIncome ? 'badge-emerald' : 'badge-rose'}" style="font-size: 0.72rem;">
+              ${isIncome ? '💰 Income' : '💸 Expense'}
+            </span>
+          </td>
+          <td><span class="badge badge-slate" style="font-size: 0.72rem;">${item.paymentMethod || 'Bank Transfer'}</span></td>
+          <td style="font-weight: 700; text-align: right; font-size: 0.88rem;" class="${isIncome ? 'text-emerald' : 'text-main'}">
+            ${formattedAmt}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Hook "Apply Filter to Ledger" & "View in Main Table" buttons
+  const applyFilterAction = () => {
+    closeDrilldownModal();
+
+    if (filterType === 'sector') {
+      activeSectorFilter = filterValue;
+      const secSelect = document.getElementById('table-sector-filter');
+      if (secSelect) secSelect.value = filterValue;
+    } else if (filterType === 'paymentMethod') {
+      searchTerm = filterValue.toLowerCase();
+      const searchInp = document.getElementById('table-search');
+      if (searchInp) searchInp.value = filterValue;
+    } else if (filterType === 'account') {
+      const selectedAcc = currentAccounts.find(a => a.name === filterValue);
+      if (selectedAcc) {
+        activeAccountFilter = selectedAcc.id;
+        const accSelect = document.getElementById('global-account-filter');
+        if (accSelect) accSelect.value = selectedAcc.id;
+      }
+    }
+
+    currentTablePage = 1;
+    renderApp();
+
+    // Show prompt banner above main table
+    const tableBanner = document.getElementById('table-drilldown-prompt-banner');
+    const promptText = document.getElementById('drilldown-prompt-text');
+    const promptSub = document.getElementById('drilldown-prompt-subtext');
+    if (tableBanner && promptText) {
+      tableBanner.style.display = 'flex';
+      promptText.textContent = `📊 Filtered from Chart: ${displayTitle}`;
+      if (promptSub) promptSub.textContent = `(${matchedExpenses.length} entries • ${formattedTotal})`;
+    }
+
+    // Smoothly scroll down to the table card on the same page
+    const tableCard = document.getElementById('main-table-card');
+    if (tableCard) {
+      tableCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      tableCard.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease';
+      tableCard.style.borderColor = 'rgba(99, 102, 241, 0.8)';
+      tableCard.style.boxShadow = '0 0 25px rgba(99, 102, 241, 0.45)';
+      setTimeout(() => {
+        tableCard.style.borderColor = '';
+        tableCard.style.boxShadow = '';
+      }, 1500);
+    }
+  };
+
+  const btnApply = document.getElementById('btn-drilldown-apply-filter');
+  if (btnApply) btnApply.onclick = applyFilterAction;
+
+  const btnViewMain = document.getElementById('btn-drilldown-view-main');
+  if (btnViewMain) btnViewMain.onclick = applyFilterAction;
+
+  modal.classList.add('active');
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function closeDrilldownModal() {
+  const el = document.getElementById('chart-drilldown-modal');
+  if (el) el.classList.remove('active');
+}
+
+window.showChartDrilldownPrompt = showChartDrilldownPrompt;
 
 /**
  * Helper: XSS Security Escape

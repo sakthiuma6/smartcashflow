@@ -21,7 +21,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/styles.css?v=65">
+  <link rel="stylesheet" href="css/styles.css?v=75">
 
   <!-- Template-Exact User Login Layout Styles (Indigo Glassmorphic Theme) -->
   <style>
@@ -627,7 +627,23 @@
       </section>
 
       <!-- Expense & Income Register Data Table & Filters -->
-      <section class="table-section glass-card">
+      <section class="table-section glass-card" id="main-table-card">
+        <!-- Interactive Chart Drilldown Prompt Banner -->
+        <div id="table-drilldown-prompt-banner" style="display: none; padding: 0.75rem 1.15rem; border-radius: 10px; background: rgba(99, 102, 241, 0.15); border: 1.5px solid rgba(99, 102, 241, 0.4); margin-bottom: 1.15rem; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; animation: slideDown 0.3s ease-out;">
+          <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(99, 102, 241, 0.3); display: flex; align-items: center; justify-content: center; color: #818cf8;">
+              <i data-lucide="bar-chart-2" style="width: 16px; height: 16px;"></i>
+            </div>
+            <div>
+              <span id="drilldown-prompt-text" style="font-size: 0.88rem; font-weight: 700; color: #f8fafc;">Filtered by chart selection</span>
+              <span id="drilldown-prompt-subtext" class="text-muted" style="font-size: 0.75rem; margin-left: 0.35rem;"></span>
+            </div>
+          </div>
+          <button type="button" id="btn-clear-chart-filter" class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.85rem; font-weight: 700; color: #fb7185; border-color: rgba(244,63,94,0.35);">
+            <i data-lucide="x"></i> Clear Filter & View All
+          </button>
+        </div>
+
         <div class="table-toolbar">
           <div class="toolbar-title">
             <h2>Financial Register</h2>
@@ -1381,12 +1397,78 @@
     </div>
   </div>
 
-  <!-- App Scripts with Cache Buster v65 -->
-  <script src="js/currency.js?v=65"></script>
-  <script src="js/db.js?v=65"></script>
-  <script src="js/sync.js?v=65"></script>
-  <script src="js/charts.js?v=65"></script>
-  <script src="js/auth.js?v=65"></script>
-  <script src="js/app.js?v=65"></script>
+  <!-- Modal: Chart Data Drill-Down Transaction Prompt -->
+  <div class="modal-overlay" id="chart-drilldown-modal">
+    <div class="modal-card glass-card" style="max-width: 860px; width: 95%;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <div id="drilldown-icon-box" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; color: #818cf8;">
+            <i data-lucide="bar-chart-3" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div>
+            <h2 id="drilldown-modal-title" style="margin: 0; font-size: 1.2rem; font-weight: 800;">Chart Breakdown Details</h2>
+            <p id="drilldown-modal-subtitle" class="text-muted" style="font-size: 0.82rem; margin: 0.15rem 0 0 0;">Transactions for selected chart metric</p>
+          </div>
+        </div>
+        <button class="btn-close" id="btn-close-drilldown-modal"><i data-lucide="x"></i></button>
+      </div>
+
+      <div style="padding: 0.5rem 0;">
+        <!-- Summary Stats Strip -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.15rem; padding: 0.85rem 1.15rem; background: rgba(15,23,42,0.7); border: 1px solid rgba(99,102,241,0.25); border-radius: 10px;">
+          <div>
+            <span class="text-muted" style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700;">Filtered Item</span>
+            <div id="drilldown-item-name" style="font-weight: 800; font-size: 1.05rem; color: #f8fafc;">All Records</div>
+          </div>
+          <div>
+            <span class="text-muted" style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700;">Total Transactions</span>
+            <div id="drilldown-count" style="font-weight: 800; font-size: 1.05rem; color: #818cf8;">0 entries</div>
+          </div>
+          <div>
+            <span class="text-muted" style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700;">Total Volume</span>
+            <div id="drilldown-total-amount" style="font-weight: 800; font-size: 1.05rem; color: #34d399;">₹ 0.00</div>
+          </div>
+          <button type="button" id="btn-drilldown-apply-filter" class="btn btn-secondary text-indigo btn-sm" style="font-weight: 700; border-radius: 9999px;">
+            <i data-lucide="filter"></i> Apply Filter to Ledger
+          </button>
+        </div>
+
+        <!-- Drilldown Table with Scrolling -->
+        <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+          <table class="expense-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Account</th>
+                <th>Description</th>
+                <th>Sector</th>
+                <th>Type</th>
+                <th>Payment</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="drilldown-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-drilldown-modal">Close Prompt</button>
+        <button type="button" class="btn btn-primary btn-glow" id="btn-drilldown-view-main">
+          <i data-lucide="table"></i> View in Main Table & Highlight
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Scripts with Cache Buster v75 -->
+  <script src="js/currency.js?v=75"></script>
+  <script src="js/db.js?v=75"></script>
+  <script src="js/sync.js?v=75"></script>
+  <script src="js/charts.js?v=75"></script>
+  <script src="js/auth.js?v=75"></script>
+  <script src="js/app.js?v=75"></script>
 </body>
 </html>
