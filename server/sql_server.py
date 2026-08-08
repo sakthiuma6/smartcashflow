@@ -12,7 +12,21 @@ import hashlib
 import secrets
 import time
 
-DB_FILE = 'smartcashflow.db'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR) if os.path.basename(BASE_DIR) == 'server' else BASE_DIR
+DATA_DIR = os.path.join(PROJECT_ROOT, 'data')
+
+def resolve_path(filename):
+    for dir_path in [DATA_DIR, PROJECT_ROOT, BASE_DIR]:
+        target = os.path.join(dir_path, filename)
+        if os.path.exists(target):
+            return target
+    if os.path.exists(DATA_DIR):
+        return os.path.join(DATA_DIR, filename)
+    return os.path.join(PROJECT_ROOT, filename)
+
+DB_FILE = resolve_path('smartcashflow.db')
+BACKUP_FILE = resolve_path('SmartCashflow_Backup.json')
 PORT = 8081
 
 def hash_password(password, salt=None):
@@ -137,6 +151,41 @@ class SQLRequestHandler(BaseHTTPRequestHandler):
         self._set_cors_headers(204)
 
     def do_GET(self):
+        # Static file serving for web UI
+        if not self.path.startswith('/api/'):
+            clean_path = self.path.split('?')[0].lstrip('/')
+            if clean_path == '' or clean_path == 'index.html':
+                file_path = os.path.join(PROJECT_ROOT, 'index.html')
+            else:
+                file_path = os.path.join(PROJECT_ROOT, clean_path)
+            
+            abs_file_path = os.path.abspath(file_path)
+            if abs_file_path.startswith(PROJECT_ROOT) and os.path.exists(abs_file_path) and os.path.isfile(abs_file_path):
+                ext = os.path.splitext(abs_file_path)[1].lower()
+                mime_types = {
+                    '.html': 'text/html; charset=utf-8',
+                    '.css': 'text/css; charset=utf-8',
+                    '.js': 'application/javascript; charset=utf-8',
+                    '.json': 'application/json; charset=utf-8',
+                    '.png': 'image/png',
+                    '.jpg': 'image/jpeg',
+                    '.jpeg': 'image/jpeg',
+                    '.svg': 'image/svg+xml',
+                    '.ico': 'image/x-icon',
+                    '.woff': 'font/woff',
+                    '.woff2': 'font/woff2',
+                    '.ttf': 'font/ttf'
+                }
+                content_type = mime_types.get(ext, 'application/octet-stream')
+                self.send_response(200)
+                self.send_header('Content-Type', content_type)
+                self.send_header('Content-Length', str(os.path.getsize(abs_file_path)))
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                with open(abs_file_path, 'rb') as f:
+                    self.wfile.write(f.read())
+                return
+
         conn = sqlite3.connect(DB_FILE)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()

@@ -1,0 +1,43 @@
+[project]
+name = "smartcashflow"
+version = "2.5.0"
+description = "Smart Sector Expense & Multi-Account Income Tracker with MySQL and SQLite Local SQL Engine"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Sakthi Umamaheswari", email = "sakthiumamaheswarit@gmail.com" }
+]
+keywords = ["expense-tracker", "finance", "budget", "mysql", "sqlite", "cashflow"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "pymysql>=1.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "flake8>=6.0.0",
+    "pytest>=7.0.0"
+]
+
+[project.scripts]
+smartcashflow = "run:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.smartcashflow]
+web_port = 8000
+api_port = 8081
+database = "smartcashflow_db"
+mysql_host = "127.0.0.1"
+mysql_port = 3306
+sqlite_db = "smartcashflow.db"
+backup_file = "SmartCashflow_Backup.json"
+auto_open_browser = true

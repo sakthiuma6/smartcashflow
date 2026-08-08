@@ -1,0 +1,83 @@
+# ==============================================================================
+# SmartCashflow .gitignore
+# ==============================================================================
+
+# --- Databases & Local Storage ---
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+data/*.db
+data/*.db-journal
+data/*.sqlite
+data/*.sqlite3
+smartcashflow.db
+smartcashflow.db-journal
+
+# --- Automatic Backups & Generated Data Exports ---
+SmartCashflow_Backup.json
+SmartCashflow_Backup_Latest.json
+SmartCashflow_Backup_*.json
+data/SmartCashflow_Backup.json
+data/SmartCashflow_Backup_Latest.json
+data/SmartCashflow_Backup_*.json
+# Retain the seed sample template for new deployments
+!data/SmartCashflow_Backup_Sample.json
+!SmartCashflow_Backup_Sample.json
+
+# --- Python Runtime & Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.manifest
+*.spec
+
+# --- Virtual Environments ---
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Operating System & Editor Artifacts ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# --- Logs & Temp Files ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.tmp/
+tmp/

@@ -1,0 +1,37 @@
+# SmartCashflow Configuration File
+
+[server]
+# Port for the static web frontend (HTML/CSS/JS)
+web_port = 8000
+
+# Port for the REST API backend gateway
+api_port = 8081
+
+# Host to bind servers
+host = "127.0.0.1"
+
+# Automatically launch browser on startup
+auto_open_browser = true
+
+[database]
+# Preferred database engine: "mysql" or "sqlite"
+engine = "mysql"
+
+# MySQL Connection Details
+mysql_host = "127.0.0.1"
+mysql_port = 3306
+mysql_user = "root"
+mysql_password = ""
+mysql_database = "smartcashflow_db"
+
+# SQLite Local Database File (fallback or standalone)
+sqlite_file = "smartcashflow.db"
+
+# Automatic JSON Backup File
+backup_file = "SmartCashflow_Backup.json"
+
+[admin]
+username = "admin"
+email = "sakthiumamaheswarit@gmail.com"
+name = "Sakthi Umamaheswari"
+role = "admin"

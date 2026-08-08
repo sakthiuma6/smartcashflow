@@ -1,0 +1,118 @@
+{
+  "app": "SmartCashflow",
+  "version": "2.5.0",
+  "exportDate": "2026-08-04T12:00:00Z",
+  "accounts": [
+    {
+      "id": "acc_primary",
+      "userId": "usr_admin",
+      "name": "HDFC Salary Checking",
+      "bank": "HDFC Bank",
+      "type": "Checking",
+      "currency": "USD",
+      "initialBalance": 5000.0
+    },
+    {
+      "id": "acc_savings_01",
+      "userId": "usr_admin",
+      "name": "Chase Wealth Savings",
+      "bank": "Chase Bank",
+      "type": "Savings",
+      "currency": "USD",
+      "initialBalance": 12500.0
+    },
+    {
+      "id": "acc_business_01",
+      "userId": "usr_admin",
+      "name": "Business LLC Operating",
+      "bank": "Wells Fargo",
+      "type": "Business",
+      "currency": "USD",
+      "initialBalance": 8200.0
+    }
+  ],
+  "expenses": [
+    {
+      "id": "exp_001",
+      "userId": "usr_admin",
+      "accountId": "acc_primary",
+      "title": "Monthly Salary Credit",
+      "amount": 7500.0,
+      "currency": "USD",
+      "type": "Income",
+      "sector": "Salary",
+      "paymentMethod": "Bank Transfer",
+      "date": "2026-08-01",
+      "recurring": "Monthly",
+      "status": "Completed",
+      "notes": "#payroll August direct deposit"
+    },
+    {
+      "id": "exp_002",
+      "userId": "usr_admin",
+      "accountId": "acc_primary",
+      "title": "Apartment Rent",
+      "amount": 2200.0,
+      "currency": "USD",
+      "type": "Expense",
+      "sector": "Rent",
+      "paymentMethod": "Bank Transfer",
+      "date": "2026-08-02",
+      "recurring": "Monthly",
+      "status": "Completed",
+      "notes": "August rent payment"
+    },
+    {
+      "id": "exp_003",
+      "userId": "usr_admin",
+      "accountId": "acc_primary",
+      "title": "Vanguard Index SIP Investment",
+      "amount": 1500.0,
+      "currency": "USD",
+      "type": "Expense",
+      "sector": "Investments",
+      "paymentMethod": "Bank Transfer",
+      "date": "2026-08-03",
+      "recurring": "Monthly",
+      "status": "Completed",
+      "notes": "Monthly auto SIP"
+    },
+    {
+      "id": "exp_004",
+      "userId": "usr_admin",
+      "accountId": "acc_primary",
+      "title": "Whole Foods Grocery",
+      "amount": 340.5,
+      "currency": "USD",
+      "type": "Expense",
+      "sector": "Food & Dining",
+      "paymentMethod": "Credit Card",
+      "date": "2026-08-04",
+      "recurring": "One-time",
+      "status": "Completed",
+      "notes": "Organic supplies & dining"
+    },
+    {
+      "id": "exp_005",
+      "userId": "usr_admin",
+      "accountId": "acc_savings_01",
+      "title": "Quarterly Dividend Payout",
+      "amount": 620.0,
+      "currency": "USD",
+      "type": "Income",
+      "sector": "Investment Returns",
+      "paymentMethod": "Bank Transfer",
+      "date": "2026-08-03",
+      "recurring": "Yearly",
+      "status": "Completed",
+      "notes": "Dividend portfolio yield"
+    }
+  ],
+  "budgets": {
+    "Shopping": 600,
+    "Investments": 2500,
+    "Rent": 2500,
+    "Food & Dining": 800,
+    "Utilities": 400
+  }
+}
