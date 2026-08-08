@@ -303,7 +303,7 @@ async function addTransfer(transferData) {
 }
 
 /**
- * Budget Methods
+ * Budget & Monthly Income Allocation Methods
  */
 async function getBudgets() {
   if (db) {
@@ -322,6 +322,31 @@ async function saveBudgets(budgetMap) {
     await db.budgets.bulkPut(items);
   } else {
     localStorage.setItem('budgets', JSON.stringify(budgetMap));
+  }
+}
+
+async function getMonthlyBudgetPlan(monthKey) {
+  const key = monthKey || new Date().toISOString().slice(0, 7);
+  const plan = await getSetting('budget_plan_' + key, null);
+  if (plan) return plan;
+
+  const legacyBudgets = await getBudgets();
+  const plannedIncome = await getSetting('planned_income_' + key, 0);
+  return {
+    month: key,
+    plannedIncome: plannedIncome || 0,
+    budgets: legacyBudgets
+  };
+}
+
+async function saveMonthlyBudgetPlan(monthKey, plan) {
+  const key = monthKey || new Date().toISOString().slice(0, 7);
+  await saveSetting('budget_plan_' + key, plan);
+  if (plan.budgets) {
+    await saveBudgets(plan.budgets);
+  }
+  if (plan.plannedIncome !== undefined) {
+    await saveSetting('planned_income_' + key, plan.plannedIncome);
   }
 }
 
@@ -515,6 +540,8 @@ window.DBModule = {
   addTransfer,
   getBudgets,
   saveBudgets,
+  getMonthlyBudgetPlan,
+  saveMonthlyBudgetPlan,
   getSetting,
   saveSetting,
   exportDatabaseJSON,

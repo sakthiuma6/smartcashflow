@@ -76,6 +76,7 @@ async function renderApp() {
 
     const landingView = document.getElementById('landing-view');
     const mainDashboard = document.getElementById('main-dashboard-content');
+    const headerToolbar = document.querySelector('.app-header-toolbar');
     const headerTimeframe = document.querySelector('.timeframe-selector-wrapper');
     const headerAccount = document.querySelector('.account-selector-wrapper');
     const headerCurrency = document.querySelector('.currency-selector-wrapper');
@@ -90,9 +91,10 @@ async function renderApp() {
     const isAdmin = window.AuthModule ? window.AuthModule.isAdmin() : false;
 
     if (!currentUser) {
-      // Hide all header action controls & CTA buttons on Login Landing View
+      // Hide all toolbar action controls & CTA buttons on Login Landing View
       if (landingView) landingView.style.display = 'flex';
       if (mainDashboard) mainDashboard.style.display = 'none';
+      if (headerToolbar) headerToolbar.style.display = 'none';
       if (headerTimeframe) headerTimeframe.style.display = 'none';
       if (headerAccount) headerAccount.style.display = 'none';
       if (headerCurrency) headerCurrency.style.display = 'none';
@@ -102,13 +104,14 @@ async function renderApp() {
       if (btnLogEntry) btnLogEntry.style.display = 'none';
       if (btnSqlConfig) btnSqlConfig.style.display = 'none';
       if (btnUserMgmt) btnUserMgmt.style.display = 'none';
-      if (userHeaderContainer) userHeaderContainer.style.display = 'none';
+      if (userHeaderContainer) userHeaderContainer.style.display = 'flex';
       if (window.lucide) window.lucide.createIcons();
       return;
     } else {
       // Show main dashboard & all header action controls when authenticated
       if (landingView) landingView.style.display = 'none';
       if (mainDashboard) mainDashboard.style.display = 'block';
+      if (headerToolbar) headerToolbar.style.display = 'flex';
       if (headerTimeframe) headerTimeframe.style.display = 'flex';
       if (headerAccount) headerAccount.style.display = 'flex';
       if (headerCurrency) headerCurrency.style.display = 'flex';
@@ -119,6 +122,7 @@ async function renderApp() {
       if (btnSqlConfig) btnSqlConfig.style.display = isAdmin ? 'inline-flex' : 'none';
       if (btnUserMgmt) btnUserMgmt.style.display = isAdmin ? 'inline-flex' : 'none';
       if (userHeaderContainer) userHeaderContainer.style.display = 'flex';
+      await checkFirstOfMonthBudgetPrompt();
     }
 
     // Strict User Data Scoping & Isolation
@@ -778,12 +782,21 @@ function renderCreditCardWidget(expenses, globalCurrency) {
 }
 
 /**
- * Sector Budget Limits Widget
+ * Sector Budget Limits Widget (Dynamic Monthly Allocation Matching Active Currency)
  */
 async function renderBudgetWidget(sectorTotals, globalCurrency) {
   const container = document.getElementById('budget-widget-list');
   if (!container) return;
-  const budgets = await window.DBModule.getBudgets();
+
+  const now = new Date();
+  let activeMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthPicker = document.getElementById('filter-month-picker');
+  if (activeTimeframeFilter === 'SPECIFIC_MONTH' && monthPicker && monthPicker.value) {
+    activeMonthKey = monthPicker.value;
+  }
+
+  const plan = await window.DBModule.getMonthlyBudgetPlan(activeMonthKey);
+  const budgets = plan.budgets || (await window.DBModule.getBudgets());
 
   const sectorEntries = Object.keys(window.DBModule.SECTORS);
 
@@ -1974,16 +1987,38 @@ function initEventListeners() {
   // Budget Modal Open/Close & Save
   const btnEditBudgets = document.getElementById('btn-edit-budgets');
   if (btnEditBudgets) {
-    btnEditBudgets.addEventListener('click', openBudgetModal);
-    document.getElementById('btn-close-budget-modal').addEventListener('click', closeBudgetModal);
-    document.getElementById('btn-save-budgets').addEventListener('click', async () => {
-      const inputs = document.getElementById('budget-inputs-list').querySelectorAll('.input-budget-sector');
+    btnEditBudgets.addEventListener('click', () => openBudgetModal());
+    document.getElementById('btn-close-budget-modal')?.addEventListener('click', closeBudgetModal);
+    document.getElementById('btn-cancel-budget-modal')?.addEventListener('click', closeBudgetModal);
+    document.getElementById('btn-save-budgets')?.addEventListener('click', async () => {
+      const monthSelector = document.getElementById('budget-month-selector');
+      const now = new Date();
+      const monthKey = monthSelector && monthSelector.value ? monthSelector.value : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      const incomeInput = document.getElementById('budget-monthly-income');
+      const plannedIncome = Number(incomeInput ? incomeInput.value : 0) || 0;
+
+      const inputs = document.getElementById('budget-inputs-list')?.querySelectorAll('.input-budget-sector') || [];
       const newBudgets = {};
       inputs.forEach(inp => {
         newBudgets[inp.getAttribute('data-sector')] = Number(inp.value) || 0;
       });
-      await window.DBModule.saveBudgets(newBudgets);
-      if (window.SyncModule) window.SyncModule.fullSync();
+
+      const reminderChk = document.getElementById('chk-first-of-month-reminder');
+      if (reminderChk) {
+        await window.DBModule.saveSetting('budget_reminder_enabled', reminderChk.checked);
+      }
+
+      await window.DBModule.saveMonthlyBudgetPlan(monthKey, {
+        month: monthKey,
+        plannedIncome,
+        budgets: newBudgets
+      });
+
+      // Mark dismissed for this month so banner stays dismissed after saving
+      await window.DBModule.saveSetting('budget_prompt_dismissed_month', monthKey);
+
+      if (window.SyncModule) await window.SyncModule.fullSync();
       closeBudgetModal();
       renderApp();
     });
@@ -2168,25 +2203,218 @@ async function handleFormSubmit() {
 }
 
 /**
- * Budget Modal Handlers
+ * Check & Display 1st of the Month Budget Allocation Prompt Banner
  */
-async function openBudgetModal() {
+async function checkFirstOfMonthBudgetPrompt() {
+  const banner = document.getElementById('monthly-budget-prompt-banner');
+  if (!banner) return;
+
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  const promptMonthEl = document.getElementById('budget-prompt-month-name');
+  if (promptMonthEl) promptMonthEl.textContent = monthName;
+
+  const reminderEnabled = await window.DBModule.getSetting('budget_reminder_enabled', true);
+  const dismissedMonth = await window.DBModule.getSetting('budget_prompt_dismissed_month', null);
+  const plan = await window.DBModule.getMonthlyBudgetPlan(currentMonthKey);
+  const hasPlannedIncome = plan && plan.plannedIncome > 0;
+
+  // Show banner if reminder is enabled, not dismissed this month, and is start of the month (day <= 5) or no planned income
+  const dayOfMonth = now.getDate();
+  const isStartOfMonth = dayOfMonth <= 5;
+
+  if (reminderEnabled && dismissedMonth !== currentMonthKey && (!hasPlannedIncome || isStartOfMonth)) {
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // Hook banner buttons
+  const btnOpen = document.getElementById('btn-prompt-open-budget');
+  if (btnOpen) {
+    btnOpen.onclick = () => {
+      openBudgetModal(currentMonthKey);
+    };
+  }
+
+  const btnDismiss = document.getElementById('btn-prompt-dismiss-budget');
+  if (btnDismiss) {
+    btnDismiss.onclick = async () => {
+      banner.style.display = 'none';
+      await window.DBModule.saveSetting('budget_prompt_dismissed_month', currentMonthKey);
+    };
+  }
+}
+
+/**
+ * Recalculate Live Budget Allocation Dashboard within the Modal
+ */
+function recalculateBudgetAllocationSummary() {
+  const globalCurrency = window.CurrencyModule.getActiveCurrency();
+  const incomeInput = document.getElementById('budget-monthly-income');
+  const plannedIncome = Number(incomeInput ? incomeInput.value : 0) || 0;
+
+  const inputs = document.getElementById('budget-inputs-list')?.querySelectorAll('.input-budget-sector') || [];
+  let totalAllocated = 0;
+  inputs.forEach(inp => {
+    totalAllocated += Number(inp.value) || 0;
+  });
+
+  const unallocated = plannedIncome - totalAllocated;
+  const pct = plannedIncome > 0 ? Math.min(Math.round((totalAllocated / plannedIncome) * 100), 100) : (totalAllocated > 0 ? 100 : 0);
+
+  const elIncome = document.getElementById('summary-budget-income');
+  const elAllocated = document.getElementById('summary-budget-allocated');
+  const elUnallocated = document.getElementById('summary-budget-unallocated');
+  const elCoverageText = document.getElementById('summary-budget-coverage-text');
+  const elProgressBar = document.getElementById('budget-allocation-progress-bar');
+
+  if (elIncome) elIncome.textContent = window.CurrencyModule.formatCurrency(plannedIncome, globalCurrency);
+  if (elAllocated) elAllocated.textContent = window.CurrencyModule.formatCurrency(totalAllocated, globalCurrency);
+  if (elUnallocated) {
+    if (unallocated < 0) {
+      elUnallocated.textContent = '- ' + window.CurrencyModule.formatCurrency(Math.abs(unallocated), globalCurrency) + ' (Over-allocated)';
+      elUnallocated.style.color = 'var(--color-rose)';
+    } else {
+      elUnallocated.textContent = window.CurrencyModule.formatCurrency(unallocated, globalCurrency) + ' (Savings)';
+      elUnallocated.style.color = 'var(--color-cyan)';
+    }
+  }
+
+  if (elCoverageText) {
+    elCoverageText.textContent = `${pct}% Allocated ${unallocated > 0 ? `(${window.CurrencyModule.formatCurrency(unallocated, globalCurrency)} unallocated)` : ''}`;
+  }
+
+  if (elProgressBar) {
+    elProgressBar.style.width = `${pct}%`;
+    if (totalAllocated > plannedIncome && plannedIncome > 0) {
+      elProgressBar.style.background = 'var(--color-rose)';
+    } else if (pct >= 85) {
+      elProgressBar.style.background = 'var(--color-amber)';
+    } else {
+      elProgressBar.style.background = 'var(--color-emerald)';
+    }
+  }
+}
+
+/**
+ * Apply Quick Allocation Rules (50/30/20 Rule or Distribute Evenly)
+ */
+function applyQuickAllocationRule(ruleType) {
+  const incomeInput = document.getElementById('budget-monthly-income');
+  let plannedIncome = Number(incomeInput ? incomeInput.value : 0) || 0;
+  if (!plannedIncome || plannedIncome <= 0) {
+    plannedIncome = 50000;
+    if (incomeInput) incomeInput.value = plannedIncome;
+  }
+
+  const inputs = document.getElementById('budget-inputs-list')?.querySelectorAll('.input-budget-sector') || [];
+  if (inputs.length === 0) return;
+
+  if (ruleType === '503020') {
+    // 50% Needs: Rent (20%), Food & Dining (15%), Utilities (10%), Healthcare (5%)
+    // 30% Wants: Shopping (10%), Entertainment (10%), Travel (5%), Others (5%)
+    // 20% Net Savings / Investments
+    const percentages = {
+      'Rent': 0.20,
+      'Food & Dining': 0.15,
+      'Utilities': 0.10,
+      'Healthcare': 0.05,
+      'Shopping': 0.10,
+      'Entertainment': 0.10,
+      'Travel': 0.05,
+      'Others': 0.05
+    };
+
+    inputs.forEach(inp => {
+      const sector = inp.getAttribute('data-sector');
+      const pct = percentages[sector] || 0.05;
+      inp.value = Math.round(plannedIncome * pct);
+    });
+  } else if (ruleType === 'even') {
+    const perSector = Math.round(plannedIncome / inputs.length);
+    inputs.forEach(inp => {
+      inp.value = perSector;
+    });
+  } else if (ruleType === 'reset') {
+    inputs.forEach(inp => {
+      inp.value = 0;
+    });
+  }
+
+  recalculateBudgetAllocationSummary();
+}
+
+/**
+ * Budget Modal Handlers & Dynamic Month Planning
+ */
+async function openBudgetModal(targetMonth = null) {
   const container = document.getElementById('budget-inputs-list');
   if (!container) return;
-  const budgets = await window.DBModule.getBudgets();
+
+  const now = new Date();
+  const currentMonthKey = targetMonth || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  
+  const monthSelector = document.getElementById('budget-month-selector');
+  if (monthSelector) {
+    monthSelector.value = currentMonthKey;
+    monthSelector.onchange = async () => {
+      await openBudgetModal(monthSelector.value);
+    };
+  }
+
   const globalCurrency = window.CurrencyModule.getActiveCurrency();
   const symbol = window.CurrencyModule.getCurrencySymbol(globalCurrency);
+
+  const currencyLabel = document.getElementById('budget-currency-label');
+  if (currencyLabel) currencyLabel.textContent = `${globalCurrency} (${symbol})`;
+
+  const incomePrefix = document.getElementById('budget-income-prefix');
+  if (incomePrefix) incomePrefix.textContent = symbol;
+
+  const plan = await window.DBModule.getMonthlyBudgetPlan(currentMonthKey);
+  const budgets = plan.budgets || (await window.DBModule.getBudgets());
+
+  const incomeInput = document.getElementById('budget-monthly-income');
+  if (incomeInput) {
+    incomeInput.value = plan.plannedIncome > 0 ? plan.plannedIncome : '';
+    incomeInput.oninput = recalculateBudgetAllocationSummary;
+  }
 
   container.innerHTML = Object.keys(window.DBModule.SECTORS).map(sec => {
     const val = budgets[sec] !== undefined ? budgets[sec] : 500;
     return `
       <div class="form-group">
-        <label>${sec} Limit (${symbol} ${globalCurrency})</label>
-        <input type="number" min="0" class="input-text input-budget-sector" data-sector="${sec}" value="${val}">
+        <label>${sec} Limit (${symbol})</label>
+        <input type="number" min="0" step="any" class="input-text input-budget-sector" data-sector="${sec}" value="${val}">
       </div>
     `;
   }).join('');
 
+  // Attach live calculation listeners to all inputs
+  container.querySelectorAll('.input-budget-sector').forEach(inp => {
+    inp.addEventListener('input', recalculateBudgetAllocationSummary);
+  });
+
+  // Preset rules
+  const btn503020 = document.getElementById('btn-rule-503020');
+  if (btn503020) btn503020.onclick = () => applyQuickAllocationRule('503020');
+
+  const btnEven = document.getElementById('btn-rule-even');
+  if (btnEven) btnEven.onclick = () => applyQuickAllocationRule('even');
+
+  const btnReset = document.getElementById('btn-rule-reset');
+  if (btnReset) btnReset.onclick = () => applyQuickAllocationRule('reset');
+
+  // Load reminder preference
+  const reminderChk = document.getElementById('chk-first-of-month-reminder');
+  if (reminderChk) {
+    reminderChk.checked = await window.DBModule.getSetting('budget_reminder_enabled', true);
+  }
+
+  recalculateBudgetAllocationSummary();
   document.getElementById('budget-modal').classList.add('active');
 }
 

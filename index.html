@@ -21,7 +21,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/styles.css?v=60">
+  <link rel="stylesheet" href="css/styles.css?v=65">
 
   <!-- Template-Exact User Login Layout Styles (Indigo Glassmorphic Theme) -->
   <style>
@@ -216,19 +216,31 @@
     
     <!-- Top Navigation Header -->
     <header class="app-header glass-card">
-      <div class="brand">
-        <div class="brand-icon-custom" style="display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.1); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 12px; width: 44px; height: 44px; flex-shrink: 0; overflow: hidden; padding: 2px;">
-          <img src="assets/logo.png?v=4" alt="SmartCashflow Logo" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px;">
-        </div>
-        <div class="brand-text">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <h1 style="font-weight: 800; font-size: 1.35rem; letter-spacing: -0.4px; color: #ffffff; margin: 0;">Smart<span style="color: #6366f1;">Cashflow</span></h1>
+      <!-- ROW 1: Brand on Left, User Session / Logout on Far Right -->
+      <div class="app-header-top">
+        <div class="brand">
+          <div class="brand-icon-custom" style="display: flex; align-items: center; justify-content: center; background: rgba(16, 185, 129, 0.1); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 12px; width: 44px; height: 44px; flex-shrink: 0; overflow: hidden; padding: 2px;">
+            <img src="assets/logo.png?v=4" alt="SmartCashflow Logo" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px;">
           </div>
-          <span class="badge badge-emerald">Multi-Account & Cashflow Analytics</span>
+          <div class="brand-text">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h1 style="font-weight: 800; font-size: 1.35rem; letter-spacing: -0.4px; color: #ffffff; margin: 0;">Smart<span style="color: #6366f1;">Cashflow</span></h1>
+            </div>
+            <span class="badge badge-emerald">Multi-Account & Cashflow Analytics</span>
+          </div>
+        </div>
+
+        <!-- User Session / Auth Header Profile Pill (Top Right on 1st Row) -->
+        <div id="user-header-container" style="display: flex; align-items: center; gap: 0.5rem;">
+          <button id="btn-open-auth-modal" class="btn btn-secondary text-indigo">
+            <i data-lucide="user"></i>
+            <span>Sign In / Register</span>
+          </button>
         </div>
       </div>
 
-      <div class="header-actions">
+      <!-- ROW 2: All Action Controls, Timeframe, Account, Currency, Export/Import, Transfer & Log Entry -->
+      <div class="app-header-toolbar header-actions">
         <!-- Admin User Switcher Filter (Visible for Admin user) -->
         <div id="admin-user-selector-wrapper" style="display: none; align-items: center; gap: 0.4rem; background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.35); padding: 0.3rem 0.6rem; border-radius: 10px;">
           <i data-lucide="crown" class="icon-sm text-amber" style="color:#f59e0b;"></i>
@@ -240,7 +252,7 @@
         </div>
 
         <!-- Monthly, Yearly, Specific Month & Custom Date Range Filter -->
-        <div class="timeframe-selector-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+        <div class="timeframe-selector-wrapper">
           <i data-lucide="calendar" class="icon-sm text-emerald"></i>
           <label for="global-timeframe" class="sr-only">Timeframe</label>
           <select id="global-timeframe" class="select-input">
@@ -334,15 +346,8 @@
           <i data-lucide="plus-circle"></i>
           <span>Log Entry</span>
         </button>
-
-        <!-- User Session / Auth Header Profile Pill (Top Right) -->
-        <div id="user-header-container" style="display: flex; align-items: center; gap: 0.5rem; margin-left: 0.25rem;">
-          <button id="btn-open-auth-modal" class="btn btn-secondary text-indigo">
-            <i data-lucide="user"></i>
-            <span>Sign In / Register</span>
-          </button>
-        </div>
       </div>
+    </header>
     </header>
 
     <!-- Template-Inspired User Login Landing View -->
@@ -432,6 +437,29 @@
     <!-- Main Content Layout -->
     <main class="main-content" id="main-dashboard-content">
       
+      <!-- 1st of the Month Budget Allocation Prompt Banner -->
+      <div id="monthly-budget-prompt-banner" class="budget-prompt-banner" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #10b981); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 15px rgba(99,102,241,0.4);">
+              <i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #ffffff;">🌟 Monthly Budget Planning Time!</h3>
+              <p style="margin: 0.2rem 0 0 0; font-size: 0.85rem; color: #cbd5e1;">It's the start of <strong id="budget-prompt-month-name" style="color: #38bdf8;">this month</strong>. Set your planned income and allocate sector budgets for smart financial discipline.</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button id="btn-prompt-open-budget" class="btn btn-primary btn-glow" style="padding: 0.55rem 1.25rem; font-weight: 700;">
+              <i data-lucide="pie-chart"></i> Allocate Monthly Budget
+            </button>
+            <button id="btn-prompt-dismiss-budget" class="btn btn-secondary" style="padding: 0.55rem 0.9rem;" title="Dismiss for today">
+              Remind Later
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Top Overview KPI Cards -->
       <section class="kpi-grid" id="kpi-section" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
         <!-- Net Bank Balance Card -->
@@ -1211,22 +1239,104 @@
     </div>
   </div>
 
-  <!-- Modal: Budget Configuration -->
+  <!-- Modal: Monthly Income & Budget Allocation -->
   <div class="modal-overlay" id="budget-modal">
-    <div class="modal-card glass-card">
+    <div class="modal-card glass-card" style="max-width: 680px; width: 95%;">
       <div class="modal-header">
-        <h2>Sector Budget Limits</h2>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; color: #818cf8;">
+            <i data-lucide="pie-chart" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div>
+            <h2 style="margin: 0; font-size: 1.2rem; font-weight: 800;">Monthly Income & Budget Allocation</h2>
+            <p class="text-muted" style="font-size: 0.8rem; margin: 0.15rem 0 0 0;">Plan monthly income and allocate spending limits across sectors</p>
+          </div>
+        </div>
         <button class="btn-close" id="btn-close-budget-modal"><i data-lucide="x"></i></button>
       </div>
+
       <div class="budget-form-container">
-        <p class="text-muted mb-4">Set monthly expense budget thresholds for each sector to receive visual warnings.</p>
+        <!-- Target Month Picker & Planned Monthly Income Row -->
+        <div class="form-grid mb-3">
+          <div class="form-group">
+            <label for="budget-month-selector">Target Planning Month</label>
+            <input type="month" id="budget-month-selector" class="input-text">
+          </div>
+          <div class="form-group">
+            <label for="budget-monthly-income">Planned Monthly Income (<span id="budget-currency-label">INR ₹</span>)</label>
+            <div class="input-with-prefix">
+              <span class="input-prefix" id="budget-income-prefix">₹</span>
+              <input type="number" id="budget-monthly-income" min="0" step="any" class="input-text" placeholder="e.g. 75000" style="padding-left: 2rem;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Allocation Summary Cards -->
+        <div class="budget-summary-card">
+          <div class="budget-stat-box">
+            <span class="budget-stat-label">Planned Income</span>
+            <span class="budget-stat-val text-emerald" id="summary-budget-income">₹0.00</span>
+          </div>
+          <div class="budget-stat-box">
+            <span class="budget-stat-label">Total Allocated</span>
+            <span class="budget-stat-val text-indigo" id="summary-budget-allocated">₹0.00</span>
+          </div>
+          <div class="budget-stat-box">
+            <span class="budget-stat-label">Unallocated / Net Savings</span>
+            <span class="budget-stat-val text-cyan" id="summary-budget-unallocated">₹0.00</span>
+          </div>
+        </div>
+
+        <!-- Visual Allocation Progress Bar -->
+        <div class="budget-allocation-bar-wrapper">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.35rem;">
+            <span><strong>Budget Allocation Coverage</strong></span>
+            <span id="summary-budget-coverage-text" class="text-muted">0% Allocated</span>
+          </div>
+          <div class="progress-bar-bg" style="height: 10px; border-radius: 6px;">
+            <div id="budget-allocation-progress-bar" class="progress-bar-fill" style="width: 0%; background: var(--color-emerald); border-radius: 6px;"></div>
+          </div>
+        </div>
+
+        <!-- Quick Allocation Rules -->
+        <div class="quick-allocation-group">
+          <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">Quick Allocate:</span>
+          <button type="button" id="btn-rule-503020" class="btn-preset-rule" title="50% Needs, 30% Wants, 20% Savings">
+            ⚡ 50/30/20 Rule
+          </button>
+          <button type="button" id="btn-rule-even" class="btn-preset-rule" title="Distribute planned income evenly">
+            ⚖️ Distribute Evenly
+          </button>
+          <button type="button" id="btn-rule-reset" class="btn-preset-rule" style="border-color: rgba(244,63,94,0.3); color: #fb7185;" title="Reset all limits to zero">
+            🔄 Reset
+          </button>
+        </div>
+
+        <!-- Sector Limit Inputs Grid -->
+        <div style="margin-bottom: 0.5rem;">
+          <span style="font-size: 0.82rem; font-weight: 700; color: #f8fafc;">Sector Spending Limits:</span>
+        </div>
         <div id="budget-inputs-list" class="budget-inputs-grid">
-          <!-- Dynamically populated -->
+          <!-- Dynamically populated per sector -->
+        </div>
+
+        <!-- 1st of Month Reminder Option -->
+        <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <label style="display: flex; align-items: center; gap: 0.55rem; font-size: 0.82rem; color: #cbd5e1; cursor: pointer; margin: 0;">
+            <input type="checkbox" id="chk-first-of-month-reminder" checked style="width: 16px; height: 16px; accent-color: #6366f1;">
+            <span>🔔 Ask & remind me on the 1st of every month to allocate my budget</span>
+          </label>
         </div>
       </div>
+
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="btn-save-budgets">Save Budgets</button>
+        <button type="button" class="btn btn-secondary" id="btn-cancel-budget-modal">Cancel</button>
+        <button type="button" class="btn btn-primary btn-glow" id="btn-save-budgets">
+          <i data-lucide="check"></i> Save Budget & Income Plan
+        </button>
       </div>
+    </div>
+  </div>
   <!-- Modal: Admin User Management Screen -->
   <div class="modal-overlay" id="user-management-modal">
     <div class="modal-card glass-card" style="max-width: 920px; width: 95%;">
@@ -1271,12 +1381,12 @@
     </div>
   </div>
 
-  <!-- App Scripts with Cache Buster v60 -->
-  <script src="js/currency.js?v=60"></script>
-  <script src="js/db.js?v=60"></script>
-  <script src="js/sync.js?v=60"></script>
-  <script src="js/charts.js?v=60"></script>
-  <script src="js/auth.js?v=60"></script>
-  <script src="js/app.js?v=60"></script>
+  <!-- App Scripts with Cache Buster v65 -->
+  <script src="js/currency.js?v=65"></script>
+  <script src="js/db.js?v=65"></script>
+  <script src="js/sync.js?v=65"></script>
+  <script src="js/charts.js?v=65"></script>
+  <script src="js/auth.js?v=65"></script>
+  <script src="js/app.js?v=65"></script>
 </body>
 </html>
