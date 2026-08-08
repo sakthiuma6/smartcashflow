@@ -1126,3 +1126,31 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes tableHighlightPulse {
+  0% {
+    box-shadow: 0 0 0 rgba(99, 102, 241, 0);
+    border-color: var(--border-glass);
+  }
+  30% {
+    box-shadow: 0 0 45px rgba(99, 102, 241, 0.75), 0 0 90px rgba(16, 185, 129, 0.35);
+    border-color: rgba(99, 102, 241, 0.95);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(99, 102, 241, 0);
+    border-color: var(--border-glass);
+  }
+}
+
+.table-card-highlight {
+  animation: tableHighlightPulse 2.2s ease-out;
+}
+
+@keyframes rowPulse {
+  0% { background-color: rgba(99, 102, 241, 0.35); }
+  100% { background-color: transparent; }
+}
+
+.table-row-highlight {
+  animation: rowPulse 2.5s ease-out;
+}
+

@@ -856,10 +856,13 @@ function renderExpenseTable(expenses, accounts, globalCurrency) {
     const itemType = item.type || 'Expense';
     const matchType = activeTypeFilter === 'ALL' || itemType === activeTypeFilter;
     const matchSector = activeSectorFilter === 'ALL' || item.sector === activeSectorFilter;
+    const accName = (accMap[item.accountId] || '').toLowerCase();
     const matchSearch = !searchTerm || 
       item.title.toLowerCase().includes(searchTerm) ||
       (item.notes && item.notes.toLowerCase().includes(searchTerm)) ||
-      item.sector.toLowerCase().includes(searchTerm);
+      item.sector.toLowerCase().includes(searchTerm) ||
+      (item.paymentMethod && item.paymentMethod.toLowerCase().includes(searchTerm)) ||
+      accName.includes(searchTerm);
     return matchType && matchSector && matchSearch;
   });
 
@@ -2543,7 +2546,7 @@ function showChartDrilldownPrompt(filterType, filterValue) {
   }
 
   // Hook "Apply Filter to Ledger" & "View in Main Table" buttons
-  const applyFilterAction = () => {
+  const applyFilterAction = async () => {
     closeDrilldownModal();
 
     if (filterType === 'sector') {
@@ -2564,7 +2567,7 @@ function showChartDrilldownPrompt(filterType, filterValue) {
     }
 
     currentTablePage = 1;
-    renderApp();
+    await renderApp();
 
     // Show prompt banner above main table
     const tableBanner = document.getElementById('table-drilldown-prompt-banner');
@@ -2576,18 +2579,22 @@ function showChartDrilldownPrompt(filterType, filterValue) {
       if (promptSub) promptSub.textContent = `(${matchedExpenses.length} entries • ${formattedTotal})`;
     }
 
+    // Highlight rendered rows
+    const rows = document.querySelectorAll('#expense-table-body tr');
+    rows.forEach(r => r.classList.add('table-row-highlight'));
+
     // Smoothly scroll down to the table card on the same page
-    const tableCard = document.getElementById('main-table-card');
-    if (tableCard) {
-      tableCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      tableCard.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease';
-      tableCard.style.borderColor = 'rgba(99, 102, 241, 0.8)';
-      tableCard.style.boxShadow = '0 0 25px rgba(99, 102, 241, 0.45)';
-      setTimeout(() => {
-        tableCard.style.borderColor = '';
-        tableCard.style.boxShadow = '';
-      }, 1500);
-    }
+    setTimeout(() => {
+      const tableCard = document.getElementById('main-table-card');
+      if (tableCard) {
+        tableCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        tableCard.classList.add('table-card-highlight');
+        setTimeout(() => {
+          tableCard.classList.remove('table-card-highlight');
+          rows.forEach(r => r.classList.remove('table-row-highlight'));
+        }, 2500);
+      }
+    }, 100);
   };
 
   const btnApply = document.getElementById('btn-drilldown-apply-filter');
