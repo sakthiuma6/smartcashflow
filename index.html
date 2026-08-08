@@ -21,7 +21,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/styles.css?v=55">
+  <link rel="stylesheet" href="css/styles.css?v=60">
 
   <!-- Template-Exact User Login Layout Styles (Indigo Glassmorphic Theme) -->
   <style>
@@ -238,6 +238,96 @@
             <!-- Dynamically populated with all registered users -->
           </select>
         </div>
+
+        <!-- Monthly, Yearly, Specific Month & Custom Date Range Filter -->
+        <div class="timeframe-selector-wrapper" style="display: flex; align-items: center; gap: 0.5rem;">
+          <i data-lucide="calendar" class="icon-sm text-emerald"></i>
+          <label for="global-timeframe" class="sr-only">Timeframe</label>
+          <select id="global-timeframe" class="select-input">
+            <option value="THIS_MONTH" selected>📅 This Month (Monthly)</option>
+            <option value="LAST_MONTH">📅 Last Month</option>
+            <option value="SPECIFIC_MONTH">📅 Specific Month...</option>
+            <option value="THIS_YEAR">📅 This Year (Yearly)</option>
+            <option value="CUSTOM_RANGE">📅 Custom Date Range...</option>
+            <option value="ALL">📅 All Time</option>
+          </select>
+
+          <!-- Specific Month Picker -->
+          <input type="month" id="filter-month-picker" class="input-text select-sm" style="display: none; width: 140px; padding: 0.4rem 0.6rem;">
+
+          <!-- Custom Date Range Pickers -->
+          <div id="custom-date-range-container" style="display: none; align-items: center; gap: 0.35rem;">
+            <input type="date" id="filter-start-date" class="input-text select-sm" style="width: 130px; padding: 0.4rem 0.6rem;">
+            <span class="text-muted" style="font-size: 0.8rem;">to</span>
+            <input type="date" id="filter-end-date" class="input-text select-sm" style="width: 130px; padding: 0.4rem 0.6rem;">
+          </div>
+        </div>
+
+        <!-- Account / Session Switcher -->
+        <div class="account-selector-wrapper">
+          <i data-lucide="building-2" class="icon-sm text-indigo"></i>
+          <label for="global-account-filter" class="sr-only">Account Session</label>
+          <select id="global-account-filter" class="select-input">
+            <option value="ALL">🏦 All Bank Accounts</option>
+            <!-- Dynamically populated -->
+          </select>
+          <button id="btn-edit-account" class="btn btn-ghost btn-sm" title="Edit Current Bank Account Details" style="display: none;">
+            <i data-lucide="edit-2"></i>
+          </button>
+          <button id="btn-add-account" class="btn btn-ghost btn-sm" title="Add New Bank Account Profile">
+            <i data-lucide="plus"></i>
+          </button>
+        </div>
+
+        <!-- Global Currency Selector -->
+        <div class="currency-selector-wrapper">
+          <i data-lucide="coins" class="icon-sm"></i>
+          <label for="global-currency" class="sr-only">Currency</label>
+          <select id="global-currency" class="select-input">
+            <option value="INR" selected>INR (₹)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD ($)</option>
+            <option value="AUD">AUD ($)</option>
+          </select>
+        </div>
+
+        <!-- Admin User Management CTA Button -->
+        <button id="btn-open-user-management" class="btn btn-secondary text-amber" title="Manage Registered Users & Roles" style="display: none;" onclick="window.openUserManagementModal && window.openUserManagementModal()">
+          <i data-lucide="users"></i>
+          <span>Manage Users</span>
+        </button>
+
+        <!-- Dashboard Layout Builder CTA -->
+        <button id="btn-open-dashboard-builder" class="btn btn-secondary text-indigo" title="Build & Customize Dashboard Widgets & Graphs">
+          <i data-lucide="layout"></i>
+          <span>Customize Layout</span>
+        </button>
+
+        <!-- Database Controls & MySQL Config Button (Import / Export / SQL Config) -->
+        <div class="btn-group">
+          <button id="btn-open-mysql-config" class="btn btn-secondary text-emerald" title="Configure MySQL Host, Port, Username & Password">
+            <i data-lucide="settings"></i>
+            <span>SQL Config</span>
+          </button>
+          <button id="btn-export-db" class="btn btn-secondary" title="Export database to JSON/CSV">
+            <i data-lucide="upload"></i>
+            <span>Export</span>
+          </button>
+          <button id="btn-import-db" class="btn btn-secondary" title="Import backup JSON">
+            <i data-lucide="download"></i>
+            <span>Import</span>
+          </button>
+          <input type="file" id="import-file-input" accept=".json" style="display: none;">
+        </div>
+
+        <!-- Account Transfer CTA -->
+        <button id="btn-open-transfer-modal" class="btn btn-secondary text-indigo" title="Transfer funds between bank accounts">
+          <i data-lucide="arrow-left-right"></i>
+          <span>Transfer</span>
+        </button>
 
         <!-- Add Transaction CTA -->
         <button id="btn-open-modal" class="btn btn-primary btn-glow">
@@ -1181,12 +1271,12 @@
     </div>
   </div>
 
-  <!-- App Scripts with Cache Buster v55 -->
-  <script src="js/currency.js?v=55"></script>
-  <script src="js/db.js?v=55"></script>
-  <script src="js/sync.js?v=55"></script>
-  <script src="js/charts.js?v=55"></script>
-  <script src="js/auth.js?v=55"></script>
-  <script src="js/app.js?v=55"></script>
+  <!-- App Scripts with Cache Buster v60 -->
+  <script src="js/currency.js?v=60"></script>
+  <script src="js/db.js?v=60"></script>
+  <script src="js/sync.js?v=60"></script>
+  <script src="js/charts.js?v=60"></script>
+  <script src="js/auth.js?v=60"></script>
+  <script src="js/app.js?v=60"></script>
 </body>
 </html>
