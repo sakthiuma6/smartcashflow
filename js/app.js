@@ -56,6 +56,8 @@ let activeSectorFilter = 'ALL';
 let activeTypeFilter = 'ALL';
 let searchTerm = '';
 let sortBy = 'date-desc';
+let currentTablePage = 1;
+const TABLE_PAGE_SIZE = 10;
 
 /**
  * Main Render Loop
@@ -325,15 +327,19 @@ function renderUserHeader() {
   if (user) {
     const isAdminRole = window.AuthModule.isAdmin();
     const avatarHtml = user.avatar_url 
-      ? `<img src="${escapeHTML(user.avatar_url)}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">`
-      : `<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${isAdminRole ? 'rgba(234, 179, 8, 0.3)' : 'rgba(16,185,129,0.3)'};color:${isAdminRole ? '#f59e0b' : '#10b981'};font-weight:700;font-size:0.75rem;">${escapeHTML(user.name.charAt(0).toUpperCase())}</span>`;
+      ? `<img src="${escapeHTML(user.avatar_url)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.3);">`
+      : `<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:${isAdminRole ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #6366f1, #4f46e5)'};color:#ffffff;font-weight:800;font-size:0.78rem;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${escapeHTML(user.name.charAt(0).toUpperCase())}</span>`;
 
     container.innerHTML = `
-      <div class="badge ${isAdminRole ? 'badge-amber' : 'badge-emerald'}" style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.75rem;cursor:pointer;" title="Signed in as ${escapeHTML(user.email)}">
+      <div class="user-session-pill" style="display:flex;align-items:center;gap:0.55rem;padding:0.3rem 0.4rem 0.3rem 0.75rem;background:rgba(15,23,42,0.85);backdrop-filter:blur(16px);border:1px solid rgba(99,102,241,0.35);border-radius:9999px;box-shadow:0 4px 18px rgba(0,0,0,0.35);">
         ${avatarHtml}
-        <span style="font-weight:600;font-size:0.82rem;">${escapeHTML(user.name)} ${isAdminRole ? '👑 (Admin)' : ''}</span>
-        <button id="btn-user-logout" class="btn-icon" style="margin-left:0.25rem;color:var(--color-rose);" title="Sign Out">
-          <i data-lucide="log-out" style="width:14px;height:14px;"></i>
+        <div style="display:flex;flex-direction:column;line-height:1.15;padding-right:0.25rem;">
+          <span style="font-weight:700;font-size:0.85rem;color:#f8fafc;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(user.name)}</span>
+          ${isAdminRole ? '<span style="font-size:0.68rem;font-weight:700;color:#f59e0b;display:flex;align-items:center;gap:2px;"><i data-lucide="crown" style="width:10px;height:10px;"></i> Admin</span>' : '<span style="font-size:0.68rem;color:#94a3b8;">User Profile</span>'}
+        </div>
+        <button id="btn-user-logout" class="btn-logout-header" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.35rem 0.75rem;border-radius:9999px;border:1px solid rgba(244,63,94,0.4);background:rgba(244,63,94,0.15);color:#fb7185;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s ease;" title="Sign Out of Account">
+          <i data-lucide="log-out" style="width:13px;height:13px;"></i>
+          <span>Logout</span>
         </button>
       </div>
     `;
@@ -351,7 +357,7 @@ function renderUserHeader() {
     }
   } else {
     container.innerHTML = `
-      <button id="btn-open-auth-modal" class="btn btn-secondary text-indigo">
+      <button id="btn-open-auth-modal" class="btn btn-secondary text-indigo" style="border-radius:9999px;padding:0.45rem 1rem;font-weight:700;">
         <i data-lucide="user"></i>
         <span>Sign In / Register</span>
       </button>
@@ -783,16 +789,15 @@ async function renderBudgetWidget(sectorTotals, globalCurrency) {
 
   container.innerHTML = sectorEntries.map(sector => {
     const spent = sectorTotals[sector] || 0;
-    const limitInUSD = budgets[sector] || 500;
-    const limitConverted = window.CurrencyModule.convertCurrency(limitInUSD, 'USD', globalCurrency);
-    const pct = Math.min(Math.round((spent / limitConverted) * 100), 100);
+    const limit = budgets[sector] !== undefined ? budgets[sector] : 500;
+    const pct = limit > 0 ? Math.min(Math.round((spent / limit) * 100), 100) : 0;
 
     let colorClass = 'var(--color-emerald)';
     if (pct > 80 && pct <= 100) colorClass = 'var(--color-amber)';
     if (pct >= 100) colorClass = 'var(--color-rose)';
 
     const spentFmt = window.CurrencyModule.formatCurrency(spent, globalCurrency);
-    const limitFmt = window.CurrencyModule.formatCurrency(limitConverted, globalCurrency);
+    const limitFmt = window.CurrencyModule.formatCurrency(limit, globalCurrency);
 
     return `
       <div class="budget-item">
@@ -828,6 +833,7 @@ function renderSectorChips() {
 function renderExpenseTable(expenses, accounts, globalCurrency) {
   const tbody = document.getElementById('expense-table-body');
   const countBadge = document.getElementById('table-count-badge');
+  const paginationContainer = document.getElementById('table-pagination-container');
   if (!tbody) return;
 
   const accMap = {};
@@ -852,9 +858,24 @@ function renderExpenseTable(expenses, accounts, globalCurrency) {
     return 0;
   });
 
-  if (countBadge) countBadge.textContent = `${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
+  const totalEntries = filtered.length;
+  const totalPages = Math.ceil(totalEntries / TABLE_PAGE_SIZE) || 1;
+  if (currentTablePage > totalPages) currentTablePage = totalPages;
+  if (currentTablePage < 1) currentTablePage = 1;
 
-  if (filtered.length === 0) {
+  const startIndex = (currentTablePage - 1) * TABLE_PAGE_SIZE;
+  const endIndex = Math.min(startIndex + TABLE_PAGE_SIZE, totalEntries);
+  const pagedItems = filtered.slice(startIndex, endIndex);
+
+  if (countBadge) {
+    countBadge.textContent = totalEntries === 0 
+      ? '0 items' 
+      : (totalEntries <= TABLE_PAGE_SIZE 
+          ? `${totalEntries} item${totalEntries === 1 ? '' : 's'}` 
+          : `Showing ${startIndex + 1}–${endIndex} of ${totalEntries}`);
+  }
+
+  if (totalEntries === 0) {
     const isAccountFiltered = activeAccountFilter !== 'ALL';
     const selectedAccObj = accounts.find(a => a.id === activeAccountFilter);
     const accNameStr = selectedAccObj ? selectedAccObj.name : 'this bank account';
@@ -868,13 +889,14 @@ function renderExpenseTable(expenses, accounts, globalCurrency) {
         </td>
       </tr>
     `;
+    if (paginationContainer) paginationContainer.innerHTML = '';
     return;
   }
 
   const defaultExpenseSec = { icon: 'package', badgeClass: 'badge-slate', color: '#94a3b8' };
   const defaultIncomeSec = { icon: 'coins', badgeClass: 'badge-slate', color: '#64748b' };
 
-  tbody.innerHTML = filtered.map(item => {
+  tbody.innerHTML = pagedItems.map(item => {
     const isIncome = (item.type || 'Expense') === 'Income';
     const secConfig = isIncome 
       ? (window.DBModule.INCOME_SECTORS[item.sector] || defaultIncomeSec)
@@ -917,6 +939,107 @@ function renderExpenseTable(expenses, accounts, globalCurrency) {
       </tr>
     `;
   }).join('');
+
+  // Render Table Pagination Controls
+  renderTablePagination(totalEntries, totalPages, startIndex, endIndex, expenses, accounts, globalCurrency);
+}
+
+/**
+ * Render Table Pagination Navigation Controls
+ */
+function renderTablePagination(totalEntries, totalPages, startIndex, endIndex, expenses, accounts, globalCurrency) {
+  const container = document.getElementById('table-pagination-container');
+  if (!container) return;
+
+  if (totalEntries <= TABLE_PAGE_SIZE && totalPages <= 1) {
+    container.innerHTML = `
+      <div class="table-pagination-info">
+        Showing <strong>${startIndex + 1}</strong> to <strong>${endIndex}</strong> of <strong>${totalEntries}</strong> entries
+      </div>
+      <div class="table-pagination-nav">
+        <span class="text-muted" style="font-size: 0.8rem;">Page 1 of 1</span>
+      </div>
+    `;
+    return;
+  }
+
+  let pageButtonsHtml = '';
+  const maxButtons = 5;
+  let startPage = Math.max(1, currentTablePage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  if (endPage - startPage + 1 < maxButtons) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  if (startPage > 1) {
+    pageButtonsHtml += `<button type="button" class="page-btn btn-page-nav" data-page="1">1</button>`;
+    if (startPage > 2) pageButtonsHtml += `<span class="page-ellipsis">…</span>`;
+  }
+
+  for (let p = startPage; p <= endPage; p++) {
+    const activeClass = p === currentTablePage ? 'active' : '';
+    pageButtonsHtml += `<button type="button" class="page-btn btn-page-nav ${activeClass}" data-page="${p}">${p}</button>`;
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) pageButtonsHtml += `<span class="page-ellipsis">…</span>`;
+    pageButtonsHtml += `<button type="button" class="page-btn btn-page-nav" data-page="${totalPages}">${totalPages}</button>`;
+  }
+
+  const isFirst = currentTablePage === 1;
+  const isLast = currentTablePage === totalPages;
+
+  container.innerHTML = `
+    <div class="table-pagination-info">
+      Showing <strong>${startIndex + 1}</strong> to <strong>${endIndex}</strong> of <strong>${totalEntries}</strong> entries
+      <span class="text-muted" style="margin-left: 0.35rem;">(10 per page)</span>
+    </div>
+    <div class="table-pagination-nav">
+      <button type="button" class="page-btn btn-page-prev" ${isFirst ? 'disabled' : ''} title="Previous Page">
+        <i data-lucide="chevron-left" style="width:14px;height:14px;margin-right:2px;"></i> Prev
+      </button>
+      ${pageButtonsHtml}
+      <button type="button" class="page-btn btn-page-next" ${isLast ? 'disabled' : ''} title="Next Page">
+        Next <i data-lucide="chevron-right" style="width:14px;height:14px;margin-left:2px;"></i>
+      </button>
+    </div>
+  `;
+
+  // Pagination click handlers
+  container.querySelectorAll('.btn-page-nav').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const p = parseInt(e.currentTarget.getAttribute('data-page'), 10);
+      if (p && p !== currentTablePage) {
+        currentTablePage = p;
+        renderExpenseTable(expenses, accounts, globalCurrency);
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  });
+
+  const prevBtn = container.querySelector('.btn-page-prev');
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentTablePage > 1) {
+        currentTablePage--;
+        renderExpenseTable(expenses, accounts, globalCurrency);
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
+  const nextBtn = container.querySelector('.btn-page-next');
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (currentTablePage < totalPages) {
+        currentTablePage++;
+        renderExpenseTable(expenses, accounts, globalCurrency);
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
+  if (window.lucide) window.lucide.createIcons();
 }
 
 /**
@@ -942,6 +1065,7 @@ function initEventListeners() {
   if (adminUserFilterSelect) {
     adminUserFilterSelect.addEventListener('change', (e) => {
       activeAdminUserFilter = e.target.value;
+      currentTablePage = 1;
       renderApp();
     });
   }
@@ -1387,6 +1511,7 @@ function initEventListeners() {
   if (timeframeSelect) {
     timeframeSelect.addEventListener('change', async (e) => {
       activeTimeframeFilter = e.target.value;
+      currentTablePage = 1;
       await window.DBModule.saveSetting('activeTimeframe', activeTimeframeFilter);
       renderApp();
     });
@@ -1395,14 +1520,17 @@ function initEventListeners() {
   // Month Picker Change Listener
   const monthPicker = document.getElementById('filter-month-picker');
   if (monthPicker) {
-    monthPicker.addEventListener('change', () => renderApp());
+    monthPicker.addEventListener('change', () => {
+      currentTablePage = 1;
+      renderApp();
+    });
   }
 
   // Custom Date Range Inputs Change Listeners
   const startDateInput = document.getElementById('filter-start-date');
   const endDateInput = document.getElementById('filter-end-date');
-  if (startDateInput) startDateInput.addEventListener('change', () => renderApp());
-  if (endDateInput) endDateInput.addEventListener('change', () => renderApp());
+  if (startDateInput) startDateInput.addEventListener('change', () => { currentTablePage = 1; renderApp(); });
+  if (endDateInput) endDateInput.addEventListener('change', () => { currentTablePage = 1; renderApp(); });
 
   // Dashboard Layout Builder Modal Handlers
   const builderModal = document.getElementById('dashboard-builder-modal');
@@ -1453,6 +1581,7 @@ function initEventListeners() {
   if (accountFilter) {
     accountFilter.addEventListener('change', async (e) => {
       activeAccountFilter = e.target.value;
+      currentTablePage = 1;
       await window.DBModule.saveSetting('activeAccount', activeAccountFilter);
       renderApp();
     });
@@ -1463,6 +1592,7 @@ function initEventListeners() {
   if (btnResetAccFilter) {
     btnResetAccFilter.addEventListener('click', async () => {
       activeAccountFilter = 'ALL';
+      currentTablePage = 1;
       await window.DBModule.saveSetting('activeAccount', 'ALL');
       renderApp();
     });
@@ -1625,6 +1755,7 @@ function initEventListeners() {
   if (typeFilter) {
     typeFilter.addEventListener('change', (e) => {
       activeTypeFilter = e.target.value;
+      currentTablePage = 1;
       renderApp();
     });
   }
@@ -1633,6 +1764,7 @@ function initEventListeners() {
   if (tableSearch) {
     tableSearch.addEventListener('input', (e) => {
       searchTerm = e.target.value.toLowerCase().trim();
+      currentTablePage = 1;
       renderApp();
     });
   }
@@ -1641,6 +1773,7 @@ function initEventListeners() {
   if (sectorFilter) {
     sectorFilter.addEventListener('change', (e) => {
       activeSectorFilter = e.target.value;
+      currentTablePage = 1;
       renderApp();
     });
   }
@@ -1649,6 +1782,7 @@ function initEventListeners() {
   if (sortBySelect) {
     sortBySelect.addEventListener('change', (e) => {
       sortBy = e.target.value;
+      currentTablePage = 1;
       renderApp();
     });
   }
@@ -1660,6 +1794,7 @@ function initEventListeners() {
         activeSectorFilter = e.target.getAttribute('data-sector');
         const secSelect = document.getElementById('table-sector-filter');
         if (secSelect) secSelect.value = activeSectorFilter;
+        currentTablePage = 1;
         renderApp();
       }
     });
@@ -2028,6 +2163,7 @@ async function handleFormSubmit() {
   }
 
   closeExpenseModal();
+  currentTablePage = 1;
   renderApp();
 }
 
@@ -2038,13 +2174,14 @@ async function openBudgetModal() {
   const container = document.getElementById('budget-inputs-list');
   if (!container) return;
   const budgets = await window.DBModule.getBudgets();
-  const symbol = window.CurrencyModule.getCurrencySymbol('USD');
+  const globalCurrency = window.CurrencyModule.getActiveCurrency();
+  const symbol = window.CurrencyModule.getCurrencySymbol(globalCurrency);
 
   container.innerHTML = Object.keys(window.DBModule.SECTORS).map(sec => {
-    const val = budgets[sec] || 500;
+    const val = budgets[sec] !== undefined ? budgets[sec] : 500;
     return `
       <div class="form-group">
-        <label>${sec} Limit (${symbol})</label>
+        <label>${sec} Limit (${symbol} ${globalCurrency})</label>
         <input type="number" min="0" class="input-text input-budget-sector" data-sector="${sec}" value="${val}">
       </div>
     `;

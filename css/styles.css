@@ -577,6 +577,96 @@ body {
 .btn-icon:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
 .btn-icon-danger:hover { color: var(--color-rose); background: rgba(244, 63, 94, 0.15); }
 
+/* Table Pagination Styles */
+.table-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid var(--border-glass);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.table-pagination-info {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.table-pagination-info strong {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.table-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.55rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  user-select: none;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.page-btn.active {
+  background: linear-gradient(135deg, var(--color-primary), #4f46e5);
+  border-color: var(--color-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 32px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.user-session-pill {
+  transition: var(--transition-fast);
+}
+
+.user-session-pill:hover {
+  border-color: rgba(99, 102, 241, 0.55) !important;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.25) !important;
+}
+
+.btn-logout-header:hover {
+  background: rgba(244, 63, 94, 0.25) !important;
+  border-color: rgba(244, 63, 94, 0.6) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
 /* Modals */
 .modal-overlay {
   position: fixed;
